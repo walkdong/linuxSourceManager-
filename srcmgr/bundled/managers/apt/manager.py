@@ -884,10 +884,20 @@ class AptManager(ManagerPlugin):
         return _dedupe_sources(sources)
 
     def current(self) -> Source | None:
-        """The enabled source apt resolves packages from right now."""
+        """The enabled source apt resolves packages from right now.
+
+        Precedence follows apt's own reading order: an official archive that covers this
+        release wins, then the first enabled entry.  ``list_enabled()`` marks such entries
+        ``is_default``.  The menu UI additionally consults the change history so that a
+        mirror the user just switched to is reported as the active one, which the plugin
+        alone cannot know (APT happily keeps several sources enabled at once).
+        """
         enabled = [source for source in self.list_enabled() if source.enabled]
         if not enabled:
             return None
+        preferred = [source for source in enabled if source.is_default]
+        if preferred:
+            return preferred[0]
         codename = self.codename()
         official = [source for source in enabled if _is_official_host(_host(source.url))]
         if official:

@@ -16,7 +16,7 @@ import pytest
 from srcmgr.core.api import Source
 from srcmgr.core.config import Config
 from srcmgr.core.errors import LockedError
-from srcmgr.core.locks import LockStore, assert_unlocked
+from srcmgr.core.locks import LockStore
 from srcmgr.core.runtime import SourceManagerRuntime
 
 UBUNTU_SOURCES = """\

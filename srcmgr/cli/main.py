@@ -113,7 +113,13 @@ def _add_globals(parser: argparse.ArgumentParser) -> None:
         "--tui",
         action="store_true",
         default=argparse.SUPPRESS,
-        help="open the interactive terminal UI (same as running 'srcmgr' with no arguments)",
+        help="open the menu UI (same as running 'srcmgr' with no arguments)",
+    )
+    parser.add_argument(
+        "--shell",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="open the line-based command REPL (for people who prefer typing)",
     )
     parser.add_argument(
         "--gui",
@@ -485,11 +491,47 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if argv[0] == "--gui":
         return _gui_unavailable(argv[1:])
+    if argv[0] == "--install-shortcut":
+        return _install_shortcut(argv[1:])
     if argv[0] == "--tui":
         return run_tui(argv[1:])
+    if argv[0] == "--shell":
+        return run_shell(argv[1:])
     if argv[0] == "--cli":
         return _run_cli(argv[1:])
     return _cli_mode_required(argv)
+
+
+def _install_shortcut(argv: Sequence[str]) -> int:
+    """``srcmgr --install-shortcut``: a desktop icon, so nobody has to open a terminal."""
+    from .output import Output, resolve_color
+    from ..core import shortcuts
+
+    out = Output(color=resolve_color("auto"))
+    for flag in argv:
+        if flag in {"-h", "--help"}:
+            print(
+                "用法：srcmgr --install-shortcut [--user|--system] [--remove]\n\n"
+                "  在应用菜单里创建“源管理器”图标，双击即可打开（不用敲命令）。\n"
+                "  默认安装到当前用户（~/.local/share/applications），无需管理员权限。\n"
+            )
+            return 0
+    try:
+        result = shortcuts.install(
+            system="--system" in argv,
+            remove="--remove" in argv,
+        )
+    except Exception as exc:  # noqa: BLE001 - report, never traceback
+        out.error(f"创建桌面图标失败：{exc}")
+        return 1
+    if result.removed:
+        out.success(f"已移除桌面图标：{result.path}")
+        return 0
+    out.success(f"已在应用菜单创建“源管理器”，路径：{result.path}")
+    out.note("现在可以在应用菜单里搜索“源”或“Source Manager”打开它。")
+    if not result.icon_installed:
+        out.note("（可选）把图标文件放到 ~/.local/share/icons 可以显示自定义图标。")
+    return 0
 
 
 def _cli_mode_required(argv: Sequence[str]) -> int:
@@ -505,8 +547,8 @@ def _cli_mode_required(argv: Sequence[str]) -> int:
         )
         return 2
     out.error(
-        "missing --cli: a bare 'srcmgr' opens the interactive TUI",
-        hint=f"run '{hint}' for a one-shot command, or 'srcmgr --tui' for the UI",
+        "missing --cli: a bare 'srcmgr' opens the menu UI (no typing needed)",
+        hint=f"run '{hint}' for a one-shot command, or 'srcmgr' for the menu",
     )
     return 2
 
@@ -517,16 +559,23 @@ def _gui_unavailable(_argv: Sequence[str]) -> int:
     out = Output(color=resolve_color("auto"))
     out.error(
         "the graphical UI is not implemented yet",
-        hint="use 'srcmgr --tui' for the terminal UI, or 'srcmgr --cli <command>'",
+        hint="use 'srcmgr' for the menu UI (no typing needed), or 'srcmgr --cli <command>'",
     )
     return 3
 
 
 def run_tui(argv: Sequence[str] = ()) -> int:
-    """Start the interactive frontend (imported lazily so the CLI stays light)."""
-    from ..tui.app import run as run_tui_app
+    """Start the full-screen menu UI (imported lazily so the CLI stays light)."""
+    from ..tui import run_menu
 
-    return run_tui_app(list(argv))
+    return run_menu(list(argv))
+
+
+def run_shell(argv: Sequence[str] = ()) -> int:
+    """Start the line-based command REPL (``srcmgr --shell``)."""
+    from ..tui import run_shell as start_shell
+
+    return start_shell([a for a in argv if a != "--shell"])
 
 
 def _run_cli(argv: Sequence[str], *, out: Output | None = None) -> int:
@@ -637,7 +686,9 @@ GLOBAL_FLAG_ARITY: dict[str, int] = {
     "--config": 1,
     "--cli": 0,
     "--tui": 0,
+    "--shell": 0,
     "--gui": 0,
+    "--install-shortcut": 0,
     "--json": 0,
     "--porcelain": 0,
     "--color": 1,

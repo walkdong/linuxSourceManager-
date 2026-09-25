@@ -1,8 +1,8 @@
-"""Tests for the interactive frontend and the three-way entry model.
+"""Tests for the entry-point model and the typing shell (``srcmgr --shell``).
 
-The TUI is driven here exactly like a user drives it - by handing :class:`Tui` a fake
-prompt session and feeding it lines - so command dispatch, meta commands, confirmation
-routing and completion are all covered without a real terminal.
+The M5 menu UI lives in ``tests/test_menu.py``; this module covers the frontend dispatch
+(bare ``srcmgr`` = menu, ``--cli`` = one-shot, ``--shell`` = REPL, ``--gui`` = reserved)
+and drives the REPL with a fake prompt session.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import pytest
 from srcmgr.cli.main import main
 from srcmgr.core.config import Config
 from srcmgr.core.runtime import SourceManagerRuntime
-from srcmgr.tui.app import Tui
+from srcmgr.tui.shell import Tui
 from srcmgr.tui.completion import Session, completion_words
 
 UBUNTU_SOURCES = """\
@@ -60,7 +60,7 @@ def apt_tree(isolated_env) -> Path:
 def make_tui(session: FakeSession | None = None, **kwargs) -> Tui:
     tui = Tui(session=session or FakeSession(), banner=False, color=False, **kwargs)
     tui.refresh()
-    from srcmgr.tui.app import Console
+    from srcmgr.tui.shell import Console
 
     tui.console = Console(tui.session, tui.runtime)
     return tui
@@ -107,12 +107,13 @@ def test_cli_frontend_still_works(capsys):
     assert main(["--cli", "version"]) == 0
 
 
-def test_tui_help_flag_documents_all_three_frontends(capsys, monkeypatch):
+def test_tui_help_flag_documents_every_frontend(capsys, monkeypatch):
     monkeypatch.setattr("sys.stdout.isatty", lambda: True)
     monkeypatch.setattr("sys.stdin.isatty", lambda: True)
     assert main(["--tui", "--help"]) == 0
     out = capsys.readouterr().out
-    assert "--cli" in out and "--tui" in out and "--gui" in out
+    for flag in ("--cli", "--shell", "--gui", "--tui"):
+        assert flag in out, flag
 
 
 def test_tui_rejects_stray_arguments(capsys, monkeypatch):
@@ -120,7 +121,7 @@ def test_tui_rejects_stray_arguments(capsys, monkeypatch):
     monkeypatch.setattr("sys.stdin.isatty", lambda: True)
     code = main(["--tui", "apt", "list"])
     assert code == 2
-    assert "unexpected argument" in capsys.readouterr().err
+    assert "不接受参数" in capsys.readouterr().err
 
 
 # ---------------------------------------------------------------------------

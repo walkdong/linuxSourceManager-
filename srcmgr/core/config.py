@@ -187,6 +187,18 @@ class Config:
                 node = {}
         node[parts[-1]] = value
         dump_yaml(raw, target, header="Source Manager user configuration")
+        # Keep the in-memory view in sync: callers (and the UI) read back immediately
+        # after writing, and a stale snapshot made `config set` look like it failed.
+        self._data = deep_merge(self._data, {parts[0]: node if len(parts) == 1 else _nest(parts, value)})
+        self._data = deep_merge(self._data, _env_overrides())
+
+
+def _nest(parts: list[str], value: Any) -> Any:
+    """``["health", "timeout"], 3`` -> ``{"health": {"timeout": 3}}``."""
+    node: Any = value
+    for part in reversed(parts[1:]):
+        node = {part: node}
+    return node
 
 
 def _redact(data: Any) -> Any:

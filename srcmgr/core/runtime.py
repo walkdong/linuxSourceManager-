@@ -36,7 +36,7 @@ from .health import (
     test_sources,
 )
 from .history import HistoryStore, Record
-from .locks import LOCKED_ACTIONS, LockStore, assert_unlocked
+from .locks import LockStore, assert_unlocked
 from .paths import cache_dir, is_root, is_writable
 from .plugins import LoadedManager, LoadedProvider, PluginLoader
 from .registry import SourceRegistry, source_matches
