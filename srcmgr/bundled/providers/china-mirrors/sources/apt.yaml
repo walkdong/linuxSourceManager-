@@ -4,6 +4,12 @@
 #   * <mirror>                 the base archive, url_template .../${distro}/ so the
 #                              same entry expands to /debian/ on Debian and /ubuntu/
 #                              on Ubuntu (apt's template_values() supplies the value).
+#                              The static `url:` is the *Ubuntu* tree, because that is
+#                              the tree that exists on this kind of machine (and on
+#                              most Chinese desktops/servers) when nothing is expanded:
+#                              listings, URL matching and the unexpanded fallback then
+#                              point at a tree that really exists, while `add` still
+#                              rewrites the URL from the template.
 #   * <mirror>-debian-security Debian-only: <codename>-security lives in the separate
 #                              /debian-security/ archive, never inside /debian/.
 #
@@ -17,7 +23,7 @@ sources:
     name: TUNA (Tsinghua)
     kind: mirror
     url_template: https://mirrors.tuna.tsinghua.edu.cn/${distro}/
-    url: https://mirrors.tuna.tsinghua.edu.cn/debian/
+    url: https://mirrors.tuna.tsinghua.edu.cn/ubuntu/
     types: [deb]
     scope: system
     priority: 20
@@ -54,7 +60,7 @@ sources:
     name: USTC (Hefei)
     kind: mirror
     url_template: https://mirrors.ustc.edu.cn/${distro}/
-    url: https://mirrors.ustc.edu.cn/debian/
+    url: https://mirrors.ustc.edu.cn/ubuntu/
     types: [deb]
     scope: system
     priority: 20
@@ -89,7 +95,7 @@ sources:
     name: Aliyun (Alibaba Cloud)
     kind: mirror
     url_template: https://mirrors.aliyun.com/${distro}/
-    url: https://mirrors.aliyun.com/debian/
+    url: https://mirrors.aliyun.com/ubuntu/
     types: [deb]
     scope: system
     priority: 10
@@ -124,7 +130,7 @@ sources:
     name: Tencent Cloud
     kind: mirror
     url_template: https://mirrors.cloud.tencent.com/${distro}/
-    url: https://mirrors.cloud.tencent.com/debian/
+    url: https://mirrors.cloud.tencent.com/ubuntu/
     types: [deb]
     scope: system
     priority: 10
@@ -159,7 +165,7 @@ sources:
     name: Huawei Cloud
     kind: mirror
     url_template: https://repo.huaweicloud.com/${distro}/
-    url: https://repo.huaweicloud.com/debian/
+    url: https://repo.huaweicloud.com/ubuntu/
     types: [deb]
     scope: system
     priority: 10
@@ -194,7 +200,7 @@ sources:
     name: SJTU (Shanghai Jiao Tong University)
     kind: mirror
     url_template: https://mirror.sjtu.edu.cn/${distro}/
-    url: https://mirror.sjtu.edu.cn/debian/
+    url: https://mirror.sjtu.edu.cn/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -227,7 +233,7 @@ sources:
     name: SJTUG (SJTU *nix user group)
     kind: mirror
     url_template: https://mirrors.sjtug.sjtu.edu.cn/${distro}/
-    url: https://mirrors.sjtug.sjtu.edu.cn/debian/
+    url: https://mirrors.sjtug.sjtu.edu.cn/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -260,7 +266,7 @@ sources:
     name: NJU (Nanjing University)
     kind: mirror
     url_template: https://mirrors.nju.edu.cn/${distro}/
-    url: https://mirrors.nju.edu.cn/debian/
+    url: https://mirrors.nju.edu.cn/ubuntu/
     types: [deb]
     scope: system
     priority: 5
@@ -295,7 +301,7 @@ sources:
     name: BFSU (Beijing Foreign Studies University)
     kind: mirror
     url_template: https://mirrors.bfsu.edu.cn/${distro}/
-    url: https://mirrors.bfsu.edu.cn/debian/
+    url: https://mirrors.bfsu.edu.cn/ubuntu/
     types: [deb]
     scope: system
     priority: 5
@@ -331,7 +337,7 @@ sources:
     name: NetEase (163)
     kind: mirror
     url_template: https://mirrors.163.com/${distro}/
-    url: https://mirrors.163.com/debian/
+    url: https://mirrors.163.com/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -365,7 +371,7 @@ sources:
     name: CERNET anycast
     kind: mirror
     url_template: https://mirrors.cernet.edu.cn/${distro}/
-    url: https://mirrors.cernet.edu.cn/debian/
+    url: https://mirrors.cernet.edu.cn/ubuntu/
     types: [deb]
     scope: system
     priority: 5
@@ -401,7 +407,7 @@ sources:
     name: ZJU (Zhejiang University)
     kind: mirror
     url_template: https://mirrors.zju.edu.cn/${distro}/
-    url: https://mirrors.zju.edu.cn/debian/
+    url: https://mirrors.zju.edu.cn/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -434,7 +440,7 @@ sources:
     name: PKU (Peking University)
     kind: mirror
     url_template: https://mirrors.pku.edu.cn/${distro}/
-    url: https://mirrors.pku.edu.cn/debian/
+    url: https://mirrors.pku.edu.cn/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -467,7 +473,7 @@ sources:
     name: SUSTech (Shenzhen)
     kind: mirror
     url_template: https://mirrors.sustech.edu.cn/${distro}/
-    url: https://mirrors.sustech.edu.cn/debian/
+    url: https://mirrors.sustech.edu.cn/ubuntu/
     types: [deb]
     scope: system
     description: >-

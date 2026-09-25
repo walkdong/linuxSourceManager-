@@ -1,0 +1,13 @@
+name: selfhosted
+display_name: Community & university mirrors
+type: provider
+version: 0.1.0
+description: >-
+  Volunteer-run and university mirror sites outside the big cloud vendors (OCF
+  Berkeley, Princeton, MIT, MTU, AARNet).  Useful as geographically diverse fallbacks
+  for Debian and Ubuntu when a vendor mirror is rate-limited or blocked.
+author: Source Manager contributors
+license: MIT
+homepage: https://www.debian.org/mirror/list
+managers: [apt]
+sources_dir: sources

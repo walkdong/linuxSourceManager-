@@ -181,16 +181,15 @@ class SourceRegistry:
             if wanted_kinds and source.kind not in wanted_kinds:
                 continue
             if country:
-                countries = [
-                    str(c).lower()
-                    for c in (
-                        source.extra.get("countries")
-                        or source.extra.get("country")
-                        or ([source.extra["country"]] if source.extra.get("country") else [])
-                    )
-                    if c
-                ]
-                if countries and country.lower() not in countries:
+                # A country filter must be satisfiable: entries that do not declare the
+                # country are excluded, otherwise "only China mirrors" silently leaks
+                # the official archives into the list.
+                declared = source.extra.get("countries") or source.extra.get("country") or []
+                if isinstance(declared, str):
+                    declared = [declared]
+                if not declared:
+                    continue
+                if country.lower() not in {str(item).lower() for item in declared}:
                     continue
             if needle:
                 haystack = " ".join(

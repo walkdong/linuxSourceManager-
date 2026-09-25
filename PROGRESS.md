@@ -4,64 +4,76 @@
 > `CLAUDE.md` → `PROGRESS.md` → `git log` → the code named below, then continue from
 > the **NEXT STEP** section. Do not re-plan the project from scratch.
 
-*Last updated: 2026-09-24 (session 1)*
+*Last updated: 2026-09-25 (session 1, continuing)*
 *Version: 0.1.0 — GUI deliberately not started (CLI + core only).*
 
 ---
 
 ## 1. Where the project is
 
-**Phase: IN PROGRESS — milestone M2 (source registry) → M3 (verification, docs, polish).**
+**Phase: M3 — verification & polish.** Everything functional is implemented; what
+remains is end-to-end verification against the real registry, small gaps (documented
+below) and the final hand-off pass.
 
-The whole engine, the whole CLI and all 14 manager plugins are written and working on
-this machine (Ubuntu 26.04, Python 3.14, no root needed for user-scope managers).
-The curated mirror catalogue (provider plugins) is being written in parallel.
+Status: `273 tests passing`, 14 manager plugins, 7 source providers (≈144 registry
+entries), CLI working end to end, nothing under `/etc` ever written outside the
+sandboxed test roots.
 
 ### Done
 
 | # | Deliverable | State | Where |
 |---|---|---|---|
-| 1 | Core engine (config, paths, atomic IO, history, backup, health, plugin loader, registry, runtime) | ✅ working | `srcmgr/core/*.py` |
-| 2 | `ManagerPlugin` / `SourceProviderPlugin` contracts, `Source` model, stable source ids | ✅ | `srcmgr/core/api.py` |
-| 3 | Plugin discovery/load/trust/install/scaffold + `plugin.yaml` validation | ✅ | `srcmgr/core/plugins.py` |
-| 4 | Health engine: HTTP/TLS probes, `ok` vs `reachable` classification, scoring, cache | ✅ (fixed 404=false-failure bug) | `srcmgr/core/health.py` |
-| 5 | Backup snapshots (self-describing manifests, faithful restore incl. "delete what we created") | ✅ | `srcmgr/core/backup.py` |
-| 6 | Operation history (append-only JSONL) + rollback + fallback planner | ✅ | `core/history.py`, `core/runtime.py` |
-| 7 | Full CLI incl. git-style `srcmgr <manager> …`, `--json/--porcelain/--dry-run/-y` | ✅ | `srcmgr/cli/*` |
-| 8 | Manager plugins: apt (1706 lines, 45 tests), flatpak, snap, docker, npm, yarn, pnpm, pip, cargo, go, git, maven, rubygems, conda | ✅ all 14 load & detect | `srcmgr/bundled/managers/*` |
-| 9 | `template_values()` + `${codename}` expansion in `_expand_templates()` | ✅ | `core/runtime.py`, apt plugin |
-| 10 | Test suite: 45 (apt) + 41 (flatpak/snap/docker) + peer modules (~180 in total at last full run) | ✅ green for those modules | `tests/` |
-| 11 | Persistent project memory (CLAUDE.md, PROGRESS.md, README) | ✅ in this session | repo root |
+| 1 | Core engine: config, paths, atomic IO, history, backup, health, plugin loader, registry, runtime | ✅ | `srcmgr/core/*.py` |
+| 2 | Plugin contracts: `ManagerPlugin`, `SourceProviderPlugin`, `Source`, stable ids, redaction | ✅ | `srcmgr/core/api.py` |
+| 3 | Plugin discovery/load/trust/install/scaffold + manifest validation | ✅ | `srcmgr/core/plugins.py` |
+| 4 | Health engine: HTTP/TLS probes, `ok` vs `reachable` classification, scoring, cache, native checks | ✅ | `srcmgr/core/health.py` |
+| 5 | Snapshots + faithful restore (incl. deleting files the change created) | ✅ | `srcmgr/core/backup.py` |
+| 6 | Append-only history, rollback, opt-in fallback planner | ✅ | `core/history.py`, `core/runtime.py` |
+| 7 | Full CLI; global flags accepted anywhere (`--json/--porcelain/-n/-y/-v/-q/--config/--color`) | ✅ | `srcmgr/cli/*` |
+| 8 | 14 manager plugins: apt, flatpak, snap, docker, npm, yarn, pnpm, pip, cargo, go, git, maven, rubygems, conda | ✅ | `srcmgr/bundled/managers/*` |
+| 9 | Source registry: 7 providers, ≈144 entries, `${codename}`/`${distro}` templating | ✅ | `srcmgr/bundled/providers/*` |
+| 10 | Plugin/source-provider marketplace flow (install/trust/uninstall/scaffold) | ✅ | `core/plugins.py`, `cli/commands.py` |
+| 11 | Tests: 273 (plugins 206 + CLI 26 + core 19 + providers 22) | ✅ all green | `tests/` |
+| 12 | Project memory + docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/source-providers.md` | ✅ | repo root, `docs/` |
+| 13 | `pip install -e .` + console scripts `srcmgr` / `source-manager` | ✅ verified | `pyproject.toml` |
 
-### In progress right now
+### Bugs found and fixed this session (regression-tested)
 
-* **Provider plugins / Source Registry** (subagent): `debian-official`, `china-mirrors`,
-  `europe-mirrors`, `cloud-vendor`, `corporate-template` under
-  `srcmgr/bundled/providers/`, plus `docs/source-providers.md` and
-  `tests/test_providers.py`. Every published mirror URL is HTTP-verified before it is
-  committed (accuracy policy in CLAUDE.md §3.9).
+1. Backup restore resolved payloads against the wrong root → "snapshot payload missing";
+   now resolved against the owning snapshot.
+2. Rollback left behind files the change had created → `BackupStore.record_paths()`
+   records post-change files so restore deletes exactly what was introduced.
+3. Two snapshots in the same second with different content collided on one id and
+   overwrote each other → the id now fingerprints file contents.
+4. Provider top-level keys (`url_template`, `countries`, …) were dropped → folded into
+   `Source.extra`.
+5. `${codename}`/`${distro}` expansion wired through `_expand_templates` (verified:
+   `tuna` → `https://mirrors.tuna.tsinghua.edu.cn/ubuntu/` on this box).
+6. 404 was treated as "mirror down" → `reachable` classification (fixes false alarms for
+   `dl.google.com`, Docker Hub, `repo.charm.sh`); health also supports `health.paths`.
+7. Global flags were only accepted before the sub-command (argparse ambiguity) → single
+   central splitter (`_parse_flexible` + `_split_globals`).
+8. `PermissionDenied` fired before the `--dry-run` short-circuit.
+9. `--china` leaked entries that never declared a country → country metadata is now
+   authoritative.
 
 ### Known gaps / TODO (ordered)
 
-1. Wait for the provider subagent; verify `srcmgr providers list` + `srcmgr apt
-   available --china` show the catalogue and that **every** provider loads (`ok`).
-2. Full-suite green: `.venv/bin/python -m pytest tests/ -q` (the `tests/test_plugins_misc.py`
-   module had 8 failures mid-session from a peer agent that was still writing; re-run and
-   fix the owner's regressions if any survive).
-3. Add repo-level integration tests (`tests/test_cli.py`): end-to-end `srcmgr managers /
-   sources / apt list / apt add --dry-run / backup / history / rollback / plugins /
-   providers / config / doctor` against a hermetic env, asserting exit codes and that
-   nothing outside the temp dirs was written.
-4. `srcmgr apt test --all` end-to-end against the real registry (latency table) and a
-   real `srcmgr apt choose` run; document the output in the README.
-5. `pip install -e .` smoke test (console script `srcmgr` + `source-manager`).
-6. The Microsoft apt repo probe reports `error: Remote end closed connection without
-   response` (HEAD is refused). Confirm whether a GET-with-Range probe fixes it; if the
-   host simply refuses, classify it as `reachable`/informational rather than failed.
-7. Optional polish: `srcmgr snap` needs root for real mutations (documented), Docker
-   mirror accelerator list validity varies over time (providers note it).
-8. Later (not requested yet): GUI (Tauri/Qt/GTK) consuming `srcmgr.core`, plugin
-   marketplace over HTTP, signed providers, `snap`/`pacman`/`dnf`/`nix` managers.
+1. **`snap` has no registry entries** (it has one store, so there is nothing to mirror).
+   Add a single official entry (`https://api.snapcraft.io`, `kind: official`) to
+   `cloud-vendor` so `srcmgr snap list --available` is not empty.
+2. **APT China mirror fallback path**: China mirrors currently fall back to `.../debian/`
+   for entries that serve both Debian and Ubuntu. On this Ubuntu box the template
+   expansion produces the right URL, but a static `url:` fallback of `.../ubuntu/`
+   (or split keys, e.g. `tuna` / `tuna-debian`) is more correct. The provider owner was
+   asked to fix and report.
+3. Re-run the whole suite **after the provider subagent stops** (it edits
+   `bundled/providers/**` and `tests/test_providers.py` concurrently; one transient
+   failure was observed mid-write).
+4. `srcmgr apt choose` has only been exercised non-interactively; do one interactive run
+   and paste the transcript into the README.
+5. Optional: a `srcmgr snap` root-requirement note in `docs/`, a systemd timer example
+   for `srcmgr health --watch`, and a GitHub-Actions style CI recipe in the docs.
 
 ---
 
@@ -69,14 +81,20 @@ The curated mirror catalogue (provider plugins) is being written in parallel.
 
 ```bash
 cd /home/alnilam/Downloads/compress/outdsh/sourceManager
-.venv/bin/python -m pytest tests/ -q                       # 1. find what is red
+.venv/bin/python -m pytest tests/ -q                       # 1. everything green?
 SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache \
-  .venv/bin/python bin/srcmgr providers list               # 2. registry sanity
+  .venv/bin/python bin/srcmgr providers list               # 2. all providers 'ok'
 SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache \
-  .venv/bin/python bin/srcmgr apt available --china        # 3. mirrors visible?
+  .venv/bin/python bin/srcmgr apt available --china | head # 3. mirrors listed
+.venv/bin/python -m pytest tests/test_cli.py -q            # 4. CLI end-to-end
 ```
 
-Then do **TODO 2 → 3 → 4 → 5** above in order, updating this file after each.
+Then work **TODO 1 → 2 → 3 → 4** in order, updating this file after each.
+Verify at the end that the real system is untouched:
+
+```bash
+find /etc/apt /etc/docker -type f -exec md5sum {} + | sort | md5sum
+```
 
 ---
 
@@ -84,13 +102,13 @@ Then do **TODO 2 → 3 → 4 → 5** above in order, updating this file after ea
 
 ```
 CLI (cli/main.py → cli/commands.py)
-        │  every command is a thin wrapper
+        │  thin handlers, one per command
         ▼
 SourceManagerRuntime (core/runtime.py)          ← the only façade; a GUI would use this
-   ├── PluginLoader        discovers bundled + user plugins, enforces trust
+   ├── PluginLoader        bundled + user plugins, trust model, install/scaffold
    ├── SourceRegistry      merges provider plugins into the catalogue
-   ├── health.test_sources probes HTTP/TLS + native checks, scores, caches
-   ├── BackupStore         snapshot(paths) → backup_id ; restore(id)
+   ├── health.test_sources HTTP/TLS + native probes, scoring, cache
+   ├── BackupStore         snapshot(paths) → id ; restore(id) ; record_paths(id, …)
    ├── HistoryStore        append-only JSONL ; rollback(id)
    └── Config              DEFAULTS < config.yaml < managers.<name> < SRCMGR_* env
         │
@@ -104,10 +122,11 @@ Two-level plugin model:
 * **manager plugin** = "how do I operate this ecosystem" (`plugin.yaml` + `manager.py`).
 * **source provider**  = "which sources exist" (`plugin.yaml` + `sources/*.yaml`, data only).
 
-Mutation pipeline (always in this order): `guard → snapshot → plugin call → history →
-(optional) refresh`, so `srcmgr rollback <manager>` can always undo the last change.
+Mutation pipeline (always this order): `guard → snapshot → plugin call → record created
+files → history → (optional) refresh`, so `srcmgr rollback <manager>` can always undo the
+last change and a failed snapshot aborts before anything is written.
 
-## 4. Layout of the state the tool keeps
+## 4. State the tool keeps
 
 | Path | Contents |
 |---|---|
@@ -116,23 +135,17 @@ Mutation pipeline (always in this order): `guard → snapshot → plugin call �
 | `$SRCMGR_CACHE_HOME` (`~/.cache/source-manager`) | `health.json` (last probe per source, TTL from config) |
 
 Environment overrides: `SRCMGR_CONFIG_HOME`, `SRCMGR_DATA_HOME`, `SRCMGR_CACHE_HOME`,
-`SRCMGR_PLUGIN_PATH`, `SRCMGR_HEALTH__TIMEOUT` (env → config, `__` splits sections).
+`SRCMGR_PLUGIN_PATH`, `SRCMGR_<SECTION>__<KEY>` (e.g. `SRCMGR_HEALTH__TIMEOUT=4`), plus
+per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
+`SRCMGR_FLATPAK_FAKE_DIR`, `SRCMGR_SNAP_FAKE_DIR`, `SRCMGR_*_RC`, …).
 
-## 5. How to verify nothing bad happened (used in every session)
+## 5. Session log (newest first)
 
-```bash
-find /etc/apt /etc/docker -type f -exec md5sum {} + | sort | md5sum   # before
-# … run srcmgr commands with the hermetic env …
-find /etc/apt /etc/docker -type f -exec md5sum {} + | sort | md5sum   # after: identical
-```
-
-## 6. Session log (newest first)
-
-* **session 1** — project created from an empty directory.
-  Engine + CLI + 14 manager plugins + health/backup/history/rollback/fallback + tests.
-  Fixed: 404 wrongly counted as a dead mirror; `-n` before the manager name
-  (`srcmgr -n apt add …`) ignored; dry-run prompting for confirmation; template
-  expansion for provider `url_template` entries; `PermissionDenied` raised before the
-  dry-run short-circuit. Started the provider/registry subagent.
-  Not yet done: repo-level CLI tests, full-suite green, `pip install -e .` check,
-  README/docs polish beyond `docs/source-providers.md`, first `git commit` series.
+* **session 1 (continued)** — integrated the source registry (7 providers, ≈144 entries);
+  fixed 9 bugs (backup restore/id collisions, created-file rollback, provider extras,
+  template expansion, `reachable` health classification, global-flag parsing, dry-run
+  ordering, country filtering); added `tests/test_cli.py` (26) and `tests/test_core.py`
+  (19) with a real-system fingerprint guard; verified `pip install -e .`; committed
+  twice (`7f8e1ce`, `9273620`).
+* **session 1** — project created from an empty directory: engine, CLI, 14 manager
+  plugins, docs/hand-off files, plugin test-suites (206 tests).

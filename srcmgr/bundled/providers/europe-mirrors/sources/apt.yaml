@@ -5,10 +5,12 @@
 # only make `srcmgr apt available` list the same archive twice.
 #
 # Hosts whose layout is /debian/ and /ubuntu/ get a ${distro} template so one entry
-# covers both families; hosts that only mirror one family use a static URL.
-# Debian security is a separate archive, so <host>/debian-security entries exist only
-# where the host really mirrors it (verified; leaseweb, fau, kernel, princeton, mtu,
-# funet and aarnet do not).
+# covers both families; hosts that only mirror one family use a static URL.  The static
+# `url:` is the Ubuntu tree so that listings, URL matching and the unexpanded fallback
+# always point at a tree that exists on a Debian/Ubuntu machine; `add` rewrites it from
+# the template.  Debian security is a separate archive, so <host>/debian-security
+# entries exist only where the host really mirrors it (verified; leaseweb, fau, kernel,
+# princeton, mtu, funet and aarnet do not).
 managers: [apt]
 sources:
   - key: ftp-debian
@@ -43,7 +45,7 @@ sources:
     name: LeaseWeb (NL)
     kind: mirror
     url_template: https://mirror.nl.leaseweb.net/${distro}/
-    url: https://mirror.nl.leaseweb.net/debian/
+    url: https://mirror.nl.leaseweb.net/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -59,7 +61,7 @@ sources:
     name: FAU Erlangen-Nürnberg (DE)
     kind: mirror
     url_template: https://ftp.fau.de/${distro}/
-    url: https://ftp.fau.de/debian/
+    url: https://ftp.fau.de/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -75,7 +77,7 @@ sources:
     name: kernel.org
     kind: mirror
     url_template: https://mirrors.kernel.org/${distro}/
-    url: https://mirrors.kernel.org/debian/
+    url: https://mirrors.kernel.org/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -91,7 +93,7 @@ sources:
     name: Rackspace
     kind: mirror
     url_template: https://mirror.rackspace.com/${distro}/
-    url: https://mirror.rackspace.com/debian/
+    url: https://mirror.rackspace.com/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -119,7 +121,7 @@ sources:
     name: NetCologne (DE)
     kind: mirror
     url_template: https://mirror.netcologne.de/${distro}/
-    url: https://mirror.netcologne.de/debian/
+    url: https://mirror.netcologne.de/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -147,7 +149,7 @@ sources:
     name: dotsrc.org (DK)
     kind: mirror
     url_template: https://mirrors.dotsrc.org/${distro}/
-    url: https://mirrors.dotsrc.org/debian/
+    url: https://mirrors.dotsrc.org/ubuntu/
     types: [deb]
     scope: system
     description: >-
@@ -191,7 +193,7 @@ sources:
     name: xTom (DE)
     kind: mirror
     url_template: https://mirrors.xtom.de/${distro}/
-    url: https://mirrors.xtom.de/debian/
+    url: https://mirrors.xtom.de/ubuntu/
     types: [deb]
     scope: system
     description: >-

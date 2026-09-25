@@ -1,0 +1,153 @@
+# Community / university APT mirrors.  As in the other providers, a ${distro} template
+# covers both trees and the static `url:` is the Ubuntu one, so an unexpanded entry
+# still points at a real archive on a Debian/Ubuntu machine.
+#
+# MIT does not mirror debian-security (404, checked) so it only appears with the Ubuntu
+# security suite; OCF and AARNet do mirror it.
+managers: [apt]
+sources:
+  - key: ocf
+    name: OCF Berkeley
+    kind: mirror
+    url_template: https://mirrors.ocf.berkeley.edu/${distro}/
+    url: https://mirrors.ocf.berkeley.edu/ubuntu/
+    types: [deb]
+    scope: system
+    description: >-
+      Open Computing Facility at UC Berkeley: Debian, Debian security, Ubuntu, Ubuntu
+      security and Ubuntu ports, run by students on a high-bandwidth campus link.
+    homepage: https://mirrors.ocf.berkeley.edu/
+    health:
+      urls:
+        - https://mirrors.ocf.berkeley.edu/debian/dists/stable/Release
+        - https://mirrors.ocf.berkeley.edu/ubuntu/dists/noble/Release
+
+  - key: ocf-debian-security
+    name: OCF Berkeley Debian security
+    kind: mirror
+    url: https://mirrors.ocf.berkeley.edu/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: OCF Berkeley mirror of the Debian security archive.
+    homepage: https://mirrors.ocf.berkeley.edu/
+    health:
+      url: https://mirrors.ocf.berkeley.edu/debian-security/dists/stable-security/Release
+
+  - key: ocf-ubuntu-ports
+    name: OCF Berkeley Ubuntu ports
+    kind: mirror
+    url: https://mirrors.ocf.berkeley.edu/ubuntu-ports/
+    suite: ${codename}
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: >-
+      OCF Berkeley Ubuntu ports archive for non-x86 architectures (arm64, armhf,
+      riscv64, ppc64el, s390x).
+    homepage: https://mirrors.ocf.berkeley.edu/
+    health:
+      url: https://mirrors.ocf.berkeley.edu/ubuntu-ports/dists/noble/Release
+
+  - key: princeton
+    name: Princeton University
+    kind: mirror
+    url_template: https://mirror.math.princeton.edu/pub/${distro}/
+    url: https://mirror.math.princeton.edu/pub/ubuntu/
+    types: [deb]
+    scope: system
+    description: >-
+      Princeton University mathematics department mirror: Debian and Ubuntu archives
+      (no separate security tree, so use it for the base archive only).
+    homepage: https://mirror.math.princeton.edu/pub/
+    health:
+      urls:
+        - https://mirror.math.princeton.edu/pub/debian/dists/stable/Release
+        - https://mirror.math.princeton.edu/pub/ubuntu/dists/noble/Release
+
+  - key: mit
+    name: MIT
+    kind: mirror
+    url_template: https://mirrors.mit.edu/${distro}/
+    url: https://mirrors.mit.edu/ubuntu/
+    types: [deb]
+    scope: system
+    description: >-
+      MIT mirror: Debian, Ubuntu, Ubuntu security and Ubuntu ports.  Debian security is
+      not mirrored here.
+    homepage: https://mirrors.mit.edu/
+    health:
+      urls:
+        - https://mirrors.mit.edu/debian/dists/stable/Release
+        - https://mirrors.mit.edu/ubuntu/dists/noble/Release
+
+  - key: mit-ubuntu-security
+    name: MIT Ubuntu security
+    kind: mirror
+    url: https://mirrors.mit.edu/ubuntu/
+    suite: ${codename}-security
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: MIT mirror of the Ubuntu <codename>-security suite.
+    homepage: https://mirrors.mit.edu/
+    health:
+      url: https://mirrors.mit.edu/ubuntu/dists/noble-security/Release
+
+  - key: mit-ubuntu-ports
+    name: MIT Ubuntu ports
+    kind: mirror
+    url: https://mirrors.mit.edu/ubuntu-ports/
+    suite: ${codename}
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: MIT Ubuntu ports archive for non-x86 architectures.
+    homepage: https://mirrors.mit.edu/
+    health:
+      url: https://mirrors.mit.edu/ubuntu-ports/dists/noble/Release
+
+  - key: mtu
+    name: Michigan Tech LUG
+    kind: mirror
+    url_template: https://mirrors.lug.mtu.edu/${distro}/
+    url: https://mirrors.lug.mtu.edu/ubuntu/
+    types: [deb]
+    scope: system
+    description: >-
+      Michigan Technological University Linux Users Group mirror: Debian and Ubuntu
+      base archives.
+    homepage: https://mirrors.lug.mtu.edu/
+    health:
+      urls:
+        - https://mirrors.lug.mtu.edu/debian/dists/stable/Release
+        - https://mirrors.lug.mtu.edu/ubuntu/dists/noble/Release
+
+  - key: aarnet
+    name: AARNet (Australia)
+    kind: mirror
+    url: https://mirror.aarnet.edu.au/pub/debian/
+    suite: ${codename}
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: >-
+      AARNet, the Australian research and education network: Debian and Debian security.
+      Debian only (no Ubuntu tree), so it uses a static URL.
+    homepage: https://mirror.aarnet.edu.au/
+    health:
+      url: https://mirror.aarnet.edu.au/pub/debian/dists/stable/Release
+
+  - key: aarnet-debian-security
+    name: AARNet Debian security
+    kind: mirror
+    url: https://mirror.aarnet.edu.au/pub/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: AARNet mirror of the Debian security archive.
+    homepage: https://mirror.aarnet.edu.au/
+    health:
+      url: https://mirror.aarnet.edu.au/pub/debian-security/dists/stable-security/Release

@@ -155,6 +155,7 @@ class BackupStore:
     ) -> str:
         """Snapshot every existing (or to-be-created) path; return the backup id."""
         files: list[FileEntry] = []
+        payloads: dict[str, tuple[bytes, int]] = {}
         seen: set[str] = set()
         expanded: list[Path] = []
         for path in paths:
@@ -163,10 +164,6 @@ class BackupStore:
                 if key not in seen:
                     seen.add(key)
                     expanded.append(item)
-
-        backup_id = f"{stamp()}-{manager}-{short_hash('|'.join(sorted(seen)) or manager)}"
-        target = ensure_dir(self._dir(backup_id))
-        store_root = ensure_dir(target / "files")
 
         for path in expanded:
             if path.is_dir():
@@ -178,9 +175,7 @@ class BackupStore:
                 except OSError as exc:  # pragma: no cover - unreadable config
                     raise BackupError(f"cannot snapshot {path}: {exc}") from exc
                 rel = _relative_key(path)
-                destination = store_root / rel
-                ensure_dir(destination.parent)
-                destination.write_bytes(data)
+                payloads[rel] = (data, mode)
                 files.append(
                     FileEntry(
                         path=str(path),
@@ -193,6 +188,21 @@ class BackupStore:
                 )
             else:
                 files.append(FileEntry(path=str(path), existed=False))
+
+        # The id must depend on what was captured, not only on the file names: two
+        # snapshots of the same path taken in the same second (an add followed by a
+        # rollback, a test suite, a rapid enable/disable pair) would otherwise collide
+        # and silently overwrite each other's payload.
+        fingerprint = "|".join(sorted(seen)) + "#" + "|".join(
+            f"{rel}:{hashlib.sha256(data).hexdigest()[:12]}" for rel, (data, _) in sorted(payloads.items())
+        )
+        backup_id = f"{stamp()}-{manager}-{short_hash(fingerprint or manager)}"
+        target = ensure_dir(self._dir(backup_id))
+        store_root = ensure_dir(target / "files")
+        for rel, (data, _mode) in payloads.items():
+            destination = store_root / rel
+            ensure_dir(destination.parent)
+            destination.write_bytes(data)
 
         manifest = Manifest(
             id=backup_id,
@@ -260,7 +270,7 @@ class BackupStore:
             if manager and manifest.manager != manager:
                 continue
             manifests.append(manifest)
-        manifests.sort(key=lambda m: m.created_at, reverse=True)
+        manifests.sort(key=lambda m: (m.created_at, m.id), reverse=True)
         return manifests[:limit] if limit else manifests
 
     def get(self, backup_id: str) -> Manifest:
@@ -368,8 +378,7 @@ def _expand(path: Path) -> list[Path]:
 
 def _relative_key(path: Path) -> str:
     """Map an absolute path to a flat, collision-free key inside the snapshot."""
-    text = str(path).lstrip("/")
-    return fnmatch.translate(text) and text.replace("/", "__")
+    return str(path).lstrip("/").replace("/", "__")
 
 
 __all__ = ["BackupStore", "FileEntry", "Manifest", "short_hash", "stamp", "utc_now"]

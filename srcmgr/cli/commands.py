@@ -39,7 +39,6 @@ from ..core.runtime import SourceManagerRuntime, canonical_manager
 from ..core.selection import selection_key, select_source
 from .output import Output, fit, human_latency, shorten_url
 
-CHINA_PROVIDERS = ("china-mirrors", "china", "cn-mirrors", "ustc", "tuna")
 CHINA_HOST_HINTS = (
     ".cn",
     "tuna.tsinghua",
@@ -69,6 +68,17 @@ def _host(url: str) -> str:
 
 
 def _is_china(source: Source) -> bool:
+    """Best-effort "is this a China-focused source?" test for the ``--china`` filter.
+
+    The authoritative signal is the ``countries`` metadata a provider declares (which
+    the registry also understands through ``registry.search(country="cn")``); the host
+    hints are only a fallback for entries that omit that metadata.
+    """
+    declared = source.extra.get("countries") or source.extra.get("country") or []
+    if isinstance(declared, str):
+        declared = [declared]
+    if declared and any(str(c).lower() in {"cn", "china", "zh"} for c in declared):
+        return True
     text = " ".join(
         [
             source.url,
@@ -77,12 +87,7 @@ def _is_china(source: Source) -> bool:
             " ".join(str(v) for v in source.extra.values() if isinstance(v, (str, int))),
         ]
     ).lower()
-    if any(hint in text for hint in CHINA_HOST_HINTS):
-        return True
-    countries = source.extra.get("countries") or source.extra.get("country") or ""
-    if isinstance(countries, str):
-        countries = [countries]
-    return any(str(c).lower() in {"cn", "china", "zh"} for c in countries)
+    return any(hint in text for hint in CHINA_HOST_HINTS)
 
 
 def _kind_of(source: Source) -> SourceKind:
