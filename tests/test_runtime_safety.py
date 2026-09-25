@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from srcmgr.core.api import PluginType, Source, SourceKind, Scope
+from srcmgr.core.api import PluginType, Source, Scope
 from srcmgr.core.config import Config
 from srcmgr.core.errors import PermissionDenied
 from srcmgr.core.health import ProbeResult

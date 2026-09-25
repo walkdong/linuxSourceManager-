@@ -21,10 +21,10 @@ classifiers = [
   "Topic :: System :: Software Distribution",
   "Topic :: System :: Systems Administration",
 ]
-dependencies = ["PyYAML>=6.0"]
+dependencies = ["PyYAML>=6.0", "prompt_toolkit>=3.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "build>=1.0"]
 
 [project.scripts]
 srcmgr = "srcmgr.cli.main:main"
@@ -34,7 +34,7 @@ source-manager = "srcmgr.cli.main:main"
 Homepage = "https://example.invalid/source-manager"
 
 [tool.setuptools]
-packages = ["srcmgr", "srcmgr.cli", "srcmgr.core"]
+packages = ["srcmgr", "srcmgr.cli", "srcmgr.core", "srcmgr.tui"]
 
 [tool.setuptools.package-data]
 srcmgr = ["bundled/managers/*/plugin.yaml", "bundled/managers/*/*.py", "bundled/providers/*/plugin.yaml", "bundled/providers/*/sources/*.yaml", "data/*.yaml"]

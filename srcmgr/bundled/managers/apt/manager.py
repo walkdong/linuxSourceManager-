@@ -920,7 +920,7 @@ class AptManager(ManagerPlugin):
                 plans.append((base, codename, "Ubuntu official"))
                 plans.append((base, f"{codename}-updates", "Ubuntu updates"))
                 plans.append((base, f"{codename}-backports", "Ubuntu backports"))
-                plans.append((f"http://security.ubuntu.com/ubuntu", f"{codename}-security", "Ubuntu security"))
+                plans.append(("http://security.ubuntu.com/ubuntu", f"{codename}-security", "Ubuntu security"))
             else:
                 plans.append((base, "", "Ubuntu official"))
         else:
@@ -1642,7 +1642,6 @@ class AptManager(ManagerPlugin):
             result.detail = f"non-HTTP source ({base.split(':', 1)[0]}), nothing to probe"
             return result
         try:
-            probes: list[ProbeResult] = []
             suites = self._probe_suites(source)
             base_probe = probe_url(base, timeout=timeout)
             result.probes.append(base_probe.to_dict())

@@ -29,7 +29,6 @@ from .errors import ManagerNotFound, PermissionDenied, SourceManagerError, Sourc
 from .health import (
     HealthCache,
     ProbeUnavailable,
-    ProbeResult,
     best_source,
     probe_source,
     rank_results,
@@ -39,7 +38,7 @@ from .health import (
 from .history import HistoryStore, Record
 from .paths import cache_dir, is_root, is_writable
 from .plugins import LoadedManager, LoadedProvider, PluginLoader
-from .registry import SourceRegistry, normalize_url, source_matches
+from .registry import SourceRegistry, source_matches
 from .selection import select_source
 
 #: Aliases accepted on the command line.
@@ -228,12 +227,16 @@ class SourceManagerRuntime:
         if loaded.plugin is None:
             reason = loaded.error or loaded.skipped or "plugin could not be loaded"
             raise ManagerNotFound(f"manager {wanted!r} is not usable: {reason}")
+        # hand the plugin a way back to the registry (used for friendly source names)
+        try:
+            loaded.plugin.runtime = self
+        except Exception:  # noqa: BLE001 - plugins with __slots__ etc.
+            pass
         return loaded.plugin
 
     def status(self, name: str) -> ManagerStatus:
         loaded = self.loaded_managers()[canonical_manager(name)]
         manifest = loaded.manifest
-        info = manifest
         status = ManagerStatus(
             name=manifest.name,
             display_name=manifest.display_name,
@@ -708,10 +711,13 @@ class SourceManagerRuntime:
         settings = self.config.health(manager)
         native_callable = None
         if native and plugin.native_test_command():
+            native_timeout = float(
+                settings.get("native_timeout") or settings.get("timeout", 8.0) * 8
+            )
             native_callable = lambda: run_command_probe(  # noqa: E731
                 plugin.name,
                 plugin.native_test_command() or [],
-                timeout=float(settings.get("native_timeout", 60.0)),
+                timeout=native_timeout,
             )
         result = probe_source(
             source,

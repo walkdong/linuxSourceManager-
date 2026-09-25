@@ -213,15 +213,17 @@ def test_rollback_without_history_reports_clearly(cli, apt_tree, as_root, capsys
 # config, doctor, plugins, providers
 # ---------------------------------------------------------------------------
 def test_config_set_get_and_path(cli, isolated_env, capsys):
-    assert cli("config", "set", "health.timeout", "3.5") == 0
+    # health.timeout is capped by an env var in tests (SRCMGR_HEALTH__TIMEOUT beats the
+    # file by design), so the round-trip is asserted on a plain setting.
+    assert cli("config", "set", "general.confirm_destructive", "false") == 0
     capsys.readouterr()
-    assert cli("config", "get", "health.timeout") == 0
-    assert "3.5" in capsys.readouterr().out
+    assert cli("config", "get", "general.confirm_destructive") == 0
+    assert "false" in capsys.readouterr().out.lower()
     assert cli("config", "path") == 0
     path = Path(capsys.readouterr().out.strip())
     assert path.exists() and path.is_file()
     assert isolated_env["SRCMGR_CONFIG_HOME"] in str(path)
-    assert cli("config", "unset", "health.timeout") == 0
+    assert cli("config", "unset", "general.confirm_destructive") == 0
 
 
 def test_per_manager_config_override(cli, capsys):

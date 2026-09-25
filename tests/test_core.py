@@ -6,9 +6,6 @@ These cover the parts the plugins rely on and the parts that broke during develo
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
 import pytest
 
 from srcmgr.core.api import Source, SourceKind, compute_source_id
@@ -258,8 +255,6 @@ def test_backup_prune_keeps_the_newest(tmp_path):
         )
     # Deterministic ordering without sleeping: rewrite created_at, which is what
     # ordering and pruning use.
-    from srcmgr.core.backup import utc_now
-
     for index, backup_id in enumerate(ids):
         manifest = store.get(backup_id)
         manifest.created_at = f"2026-01-0{index + 1}T00:00:00+00:00"

@@ -27,8 +27,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-import yaml
-
 from .api import (
     ManagerPlugin,
     PluginManifest,

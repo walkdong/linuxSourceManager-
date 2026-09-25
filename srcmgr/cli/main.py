@@ -27,24 +27,18 @@ Usage is deliberately git-like::
 from __future__ import annotations
 
 import argparse
-import io
-import os
 import shlex
 import sys
-import time
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Sequence
 
 from .. import APP_NAME, __version__
-from ..core import runtime as runtime_module
-from ..core.api import PluginType, Source, SourceKind
-from ..core.config import Config, parse_value
+from ..core.api import SourceKind
+from ..core.config import Config
 from ..core.errors import SourceManagerError
-from ..core.paths import config_file, describe_path
-from ..core.runtime import ChangePlan, SourceManagerRuntime, canonical_manager
-from ..core.selection import selection_key
+from ..core.runtime import SourceManagerRuntime, canonical_manager
 from . import commands as cmd
-from .output import Output, human_latency, resolve_color
+from .output import Output, resolve_color
 
 PROGRAM = "srcmgr"
 
@@ -107,6 +101,24 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _add_globals(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", metavar="FILE", help="use an alternate config.yaml")
+    parser.add_argument(
+        "--cli",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="run one-shot commands (required: a bare 'srcmgr' opens the TUI)",
+    )
+    parser.add_argument(
+        "--tui",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="open the interactive terminal UI (same as running 'srcmgr' with no arguments)",
+    )
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="open the graphical UI (planned, not implemented yet)",
+    )
     parser.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help="machine readable output")
     parser.add_argument(
         "--porcelain",
@@ -432,30 +444,121 @@ def build_manager_parser(manager: str, actions: Sequence[str] = MANAGER_ACTIONS)
 # entry point
 # ---------------------------------------------------------------------------
 def main(argv: Sequence[str] | None = None) -> int:
+    """Frontend dispatcher.
+
+    ================================  ==============================================
+    invocation                        frontend
+    ================================  ==============================================
+    ``srcmgr``                        interactive TUI (the GUI once it exists)
+    ``srcmgr --tui``                  interactive TUI (explicit)
+    ``srcmgr --cli apt list``         one-shot CLI
+    ``srcmgr --gui``                  graphical UI (reserved, reports "not implemented")
+    ================================  ==============================================
+
+    Anything else - notably the pre-M4 shorthand ``srcmgr apt list`` without ``--cli`` -
+    is refused with a pointer to the correct form, so a script can never silently end up
+    launching an interactive UI.
+    """
     argv = list(sys.argv[1:] if argv is None else argv)
 
-    # git-style manager shortcuts: `srcmgr apt list` / `srcmgr -n apt add ...`
+    if not argv:
+        return run_tui()
+    if argv[0] in {"-h", "--help"}:
+        build_parser().parse_args(["--help"])  # argparse prints and exits
+    if argv[0] == "--version":
+        print(f"{APP_NAME} {__version__}")
+        return 0
+    if argv[0] == "--gui":
+        return _gui_unavailable(argv[1:])
+    if argv[0] == "--tui":
+        return run_tui(argv[1:])
+    if argv[0] == "--cli":
+        return _run_cli(argv[1:])
+    return _cli_mode_required(argv)
+
+
+def _cli_mode_required(argv: Sequence[str]) -> int:
+    """Explain that one-shot commands now need an explicit ``--cli``."""
+    from .output import Output, resolve_color
+
+    out = Output(color=resolve_color("auto"))
+    hint = "srcmgr --cli " + " ".join(shlex.quote(str(a)) for a in argv)
+    if "--cli" in argv:
+        out.error(
+            "--cli must come before the command",
+            hint=f"did you mean: {hint}",
+        )
+        return 2
+    out.error(
+        "missing --cli: a bare 'srcmgr' opens the interactive TUI",
+        hint=f"run '{hint}' for a one-shot command, or 'srcmgr --tui' for the UI",
+    )
+    return 2
+
+
+def _gui_unavailable(_argv: Sequence[str]) -> int:
+    from .output import Output, resolve_color
+
+    out = Output(color=resolve_color("auto"))
+    out.error(
+        "the graphical UI is not implemented yet",
+        hint="use 'srcmgr --tui' for the terminal UI, or 'srcmgr --cli <command>'",
+    )
+    return 3
+
+
+def run_tui(argv: Sequence[str] = ()) -> int:
+    """Start the interactive frontend (imported lazily so the CLI stays light)."""
+    from ..tui.app import run as run_tui_app
+
+    return run_tui_app(list(argv))
+
+
+def _run_cli(argv: Sequence[str], *, out: Output | None = None) -> int:
+    """Execute exactly one command from an already ``--cli``-stripped argument list."""
+    argv = [str(a) for a in argv]
+    if not argv or argv[0] in {"-h", "--help"}:
+        build_parser().parse_args(["--help"])  # argparse prints and exits
+    if argv[0] == "--version":
+        print(f"{APP_NAME} {__version__}")
+        return 0
+
+    # git-style manager shortcuts: `--cli apt list` / `--cli -n apt add ...`
     manager_token = _first_positional(argv)
     if manager_token is not None and manager_token not in COMMANDS:
+        if manager_token not in MANAGER_HINTS:
+            from ..core.errors import ManagerNotFound
+
+            try:
+                SourceManagerRuntime(config=Config.load()).plugin(manager_token)
+            except ManagerNotFound as exc:
+                from .output import Output, resolve_color
+
+                Output(color=resolve_color("auto")).error(exc.message, exc.hint)
+                return 2
         candidate = canonical_manager(manager_token)
         index = argv.index(manager_token)
         head = argv[:index]
         tail = argv[index + 1:]
-        # `srcmgr apt` with no action means `srcmgr apt list`.
+        # `--cli apt` with no action means `--cli apt list`.
         action = tail if tail and not tail[0].startswith("-") else ["list", *tail]
         manager_parser = build_manager_parser(candidate)
         args = _parse_flexible(manager_parser, [*head, *action])
-        return _run(manager_parser, args, manager=candidate, raw_argv=argv)
+        return _run(manager_parser, args, manager=candidate, raw_argv=argv, out=out)
 
     parser = build_parser()
-    if not argv:
-        argv = ["managers"]
-    elif argv[0] in {"--version", "-h", "--help"}:
-        parser.parse_args(argv)  # let argparse handle it (and exit)
     args = _parse_flexible(parser, argv)
     if not getattr(args, "handler", None):
         args = _parse_flexible(parser, ["managers"])
-    return _run(parser, args, manager=None, raw_argv=argv)
+    return _run(parser, args, manager=None, raw_argv=argv, out=out)
+
+
+#: Manager names known at import time, used for typo hints and for completion before the
+#: (slower) plugin loader has run.  The loader remains the source of truth.
+MANAGER_HINTS = {
+    "apt", "flatpak", "snap", "docker", "npm", "yarn", "pnpm", "pip", "conda", "cargo",
+    "go", "git", "maven", "rubygems",
+}
 
 
 def _parse_flexible(
@@ -517,6 +620,9 @@ def _split_globals(argv: list[str]) -> tuple[list[str], list[str]]:
 #: position.  Keep in sync with :func:`_add_globals`.
 GLOBAL_FLAG_ARITY: dict[str, int] = {
     "--config": 1,
+    "--cli": 0,
+    "--tui": 0,
+    "--gui": 0,
     "--json": 0,
     "--porcelain": 0,
     "--color": 1,
@@ -562,17 +668,19 @@ def _run(
     *,
     manager: str | None,
     raw_argv: Sequence[str],
+    out: Output | None = None,
 ) -> int:
     from ..core.errors import ManifestError, PermissionDenied
 
     color_mode = "never" if getattr(args, "no_color", False) else (getattr(args, "color", None) or "auto")
-    out = Output(
-        json_mode=bool(getattr(args, "json", False)),
-        porcelain=bool(getattr(args, "porcelain", False)),
-        color=resolve_color(color_mode),
-        verbose=bool(getattr(args, "verbose", False)),
-        quiet=bool(getattr(args, "quiet", False)),
-    )
+    if out is None:
+        out = Output(
+            json_mode=bool(getattr(args, "json", False)),
+            porcelain=bool(getattr(args, "porcelain", False)),
+            color=resolve_color(color_mode),
+            verbose=bool(getattr(args, "verbose", False)),
+            quiet=bool(getattr(args, "quiet", False)),
+        )
     try:
         config_path = getattr(args, "config", None)
         config = Config.load(Path(config_path).expanduser() if config_path else None)

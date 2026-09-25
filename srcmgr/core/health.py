@@ -14,6 +14,7 @@ Design rules:
 from __future__ import annotations
 
 import json
+import os
 import re
 import socket
 import ssl
@@ -22,7 +23,7 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
@@ -58,6 +59,16 @@ _HTTP_IN_TEXT = re.compile(r"\b(?:HTTP[/ ]?\d(?:\.\d)?\s*)?(\d{3})\b")
 
 class ProbeUnavailable(RuntimeError):
     """Raised when a check cannot even be attempted."""
+
+
+def offline() -> bool:
+    """True when the environment forbids network access (``SRCMGR_OFFLINE=1``).
+
+    Used by the test suite and by air-gapped machines: every probe returns a
+    deterministic "offline" result instead of waiting for a timeout, and native checks
+    are skipped entirely, so nothing here can stall a run.
+    """
+    return os.environ.get("SRCMGR_OFFLINE", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 @dataclass
@@ -102,6 +113,11 @@ def probe_url(
     method = (method or "HEAD").strip().upper() or "HEAD"
     if not url:
         return ProbeResult(ok=False, status="no-url", error="source has no URL")
+    if offline():
+        return ProbeResult(
+            ok=False, status="offline", url=url,
+            error="network access disabled (SRCMGR_OFFLINE=1)", method=method,
+        )
     if not re.match(r"^https?://", url):
         return ProbeResult(ok=False, status="unsupported-scheme", url=url,
                            error=f"cannot probe scheme of {url!r}")
@@ -243,6 +259,17 @@ def run_command_probe(
     cwd: str | None = None,
 ) -> TestResult:
     """Run an ecosystem-native check such as ``npm ping`` and interpret the exit code."""
+    if offline():
+        return TestResult(
+            manager=manager,
+            source_id="native",
+            name=f"{manager} native check",
+            ok=False,
+            status="offline",
+            method=" ".join(command),
+            checked_at=utc_now(),
+            error="network access disabled (SRCMGR_OFFLINE=1)",
+        )
     started = time.perf_counter()
     try:
         completed = subprocess.run(  # noqa: S603 - command comes from a plugin manifest
@@ -574,6 +601,7 @@ class HealthCache:
 
 __all__ = [
     "HealthCache",
+    "offline",
     "ProbeResult",
     "ProbeUnavailable",
     "best_source",

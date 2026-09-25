@@ -65,10 +65,14 @@ def isolated_env(tmp_path, monkeypatch) -> dict[str, str]:
         "SRCMGR_MAVEN_SETTINGS": str(home / ".m2" / "settings.xml"),
         "SRCMGR_GEMRC": str(home / ".gemrc"),
         "SRCMGR_CONDA_RC": str(home / ".condarc"),
-        # NO_COLOR keeps assertions on plain text simple; the health timeout is NOT set
-        # here so that tests can exercise `config set health.timeout` without fighting
-        # an environment override (env beats the config file by design).
+        # NO_COLOR keeps assertions on plain text simple.
         "NO_COLOR": "1",
+        # Cap probe timeouts hard and forbid real network access: tests must never sit on
+        # a dead mirror (8s each) or run `git ls-remote` (60s).  Both turned a 21s suite
+        # into a 90s one; with SRCMGR_OFFLINE the same sweep takes ~1s while still
+        # exercising every code path (probes report a deterministic "offline").
+        "SRCMGR_HEALTH__TIMEOUT": "1",
+        "SRCMGR_OFFLINE": "1",
     }
     # a fake os-release so the apt plugin has a deterministic codename
     (tmp_path / "etc-apt").mkdir(parents=True, exist_ok=True)
@@ -87,14 +91,16 @@ def cli(isolated_env):
     """Run ``srcmgr`` in-process and capture its exit code and stdout."""
 
     def run(*args: str, expect: int | None = None):
+        """Run one CLI command.  ``--cli`` is inserted for you: it is mandatory now that a
+        bare ``srcmgr`` invocation means "open the TUI"."""
         from srcmgr.cli.main import main
 
         try:
-            code = main([*args])
+            code = main(["--cli", *args])
         except SystemExit as exc:  # argparse exits for --version/--help
             code = int(exc.code or 0)
         if expect is not None:
-            assert code == expect, f"srcmgr {' '.join(args)} exited {code}, expected {expect}"
+            assert code == expect, f"srcmgr --cli {' '.join(args)} exited {code}, expected {expect}"
         return code
 
     return run

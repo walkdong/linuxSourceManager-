@@ -67,6 +67,24 @@ def which(program: str) -> str | None:
     return shutil.which(program)
 
 
+#: Hard ceiling for any plugin shell-out.  A CLI can block indefinitely on a broken
+#: daemon (``snap get`` does exactly that when it has no controlling terminal), which
+#: would freeze the interactive UI; ``SRCMGR_PLUGIN_TIMEOUT`` lowers the ceiling further
+#: (the test suite sets it, and air-gapped users may too).
+DEFAULT_SUBPROCESS_CAP = 15.0
+
+
+def subprocess_cap() -> float:
+    raw = os.environ.get("SRCMGR_PLUGIN_TIMEOUT", "").strip()
+    if not raw:
+        return DEFAULT_SUBPROCESS_CAP
+    try:
+        value = float(raw)
+    except ValueError:
+        return DEFAULT_SUBPROCESS_CAP
+    return value if value > 0 else DEFAULT_SUBPROCESS_CAP
+
+
 def run(
     command: Sequence[str],
     *,
@@ -74,14 +92,21 @@ def run(
     check: bool = False,
     input_text: str | None = None,
 ) -> subprocess.CompletedProcess:
-    """Run a command, capturing output; never raises for a non-zero exit."""
+    """Run a command, capturing output; never raises for a non-zero exit.
+
+    The effective timeout is ``min(timeout, subprocess_cap())`` so no plugin can hang the
+    UI, and ``stdin`` is always ``DEVNULL``: several vendor CLIs (snapd) block waiting for
+    a terminal that is not there.
+    """
+    effective = min(float(timeout), subprocess_cap())
     return subprocess.run(  # noqa: S603 - argv is built by plugins, never a shell string
         list(command),
         capture_output=True,
         text=True,
-        timeout=timeout,
+        timeout=effective,
         check=check,
         input=input_text,
+        stdin=subprocess.DEVNULL,
         env=os.environ.copy(),
     )
 
@@ -266,11 +291,12 @@ class KeyValueFile:
                 continue
             name = match.group(1).lower()
             if name in remaining:
-                _, value = remaining.pop(name)
+                # keep the key as the user spelled it; only the value changes
+                original_key, value = remaining.pop(name)
                 if value is None or value == "":
-                    lines[index] = f"{original}{self.separator}"
+                    lines[index] = f"{original_key}{self.separator}"
                 else:
-                    lines[index] = f"{original}{self.separator}{value}"
+                    lines[index] = f"{original_key}{self.separator}{value}"
         for original, value in remaining.values():
             if value is None or value == "":
                 continue
@@ -459,9 +485,7 @@ class SingleValueManager(ManagerPlugin):
     def registry_lookup(self, value: str) -> Source | None:
         """Look the value up in the registry to get a friendly name."""
         try:
-            from .registry import SourceRegistry
-
-            registry = getattr(self, "_registry", None)
+            registry = self.registry
             if registry is None:
                 return None
             return registry.get(self.name, value) or next(
@@ -562,6 +586,7 @@ class SingleValueManager(ManagerPlugin):
 
 
 __all__ = [
+    "DEFAULT_SUBPROCESS_CAP",
     "ENV_GUARD",
     "KeyValueFile",
     "MARKER_BEGIN",
@@ -582,6 +607,7 @@ __all__ = [
     "remove_marked_block",
     "replace_xml_element",
     "run",
+    "subprocess_cap",
     "upsert_marked_block",
     "which",
     "xdg_config_home",

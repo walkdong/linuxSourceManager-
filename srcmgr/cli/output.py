@@ -12,7 +12,7 @@ import shutil
 import sys
 import unicodedata
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Sequence
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -142,8 +142,19 @@ class Output:
 
     # -- prompts -------------------------------------------------------------
     def confirm(self, question: str, *, default: bool = False, assume_yes: bool = False) -> bool:
+        """Ask a yes/no question, via the active frontend when there is one.
+
+        A one-shot CLI answers on the terminal; the TUI installs an
+        :func:`srcmgr.core.interaction.ask_hook` so the question is asked in its own
+        prompt instead.  Non-interactive runs (pipes, cron) keep the default answer.
+        """
         if assume_yes:
             return True
+        from ..core.interaction import ask_hook
+
+        hook = ask_hook.get()
+        if hook is not None:
+            return bool(hook(question, default, assume_yes))
         if not sys.stdin.isatty():
             return default
         suffix = " [Y/n] " if default else " [y/N] "

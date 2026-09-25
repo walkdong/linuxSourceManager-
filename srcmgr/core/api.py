@@ -21,7 +21,7 @@ import enum
 import hashlib
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping, Protocol, Sequence, runtime_checkable
+from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
 
 
 class PluginType(str, enum.Enum):
@@ -280,6 +280,9 @@ class ManagerPlugin:
     manifest: PluginManifest
     #: Directory the plugin was loaded from.
     base_dir: Path
+    #: Set by :class:`~srcmgr.core.runtime.SourceManagerRuntime` so a plugin can look
+    #: things up in the source registry (friendly names, which mirror is which).
+    runtime: Any | None = None
 
     #: Operations this plugin implements (subset of the canonical list).
     supports: tuple[str, ...] = (
@@ -294,6 +297,17 @@ class ManagerPlugin:
     @property
     def name(self) -> str:
         return self.manifest.name
+
+    @property
+    def registry(self) -> Any | None:
+        """The source registry, when the plugin was loaded through a runtime."""
+        runtime = getattr(self, "runtime", None)
+        if runtime is None:
+            return None
+        try:
+            return runtime.registry
+        except Exception:  # noqa: BLE001 - metadata lookups must never break a plugin
+            return None
 
     @property
     def info(self) -> ManagerInfo:

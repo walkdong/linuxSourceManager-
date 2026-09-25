@@ -18,14 +18,14 @@ from typing import Any, Mapping, Sequence
 from urllib.parse import urlsplit
 
 from ..core.api import PluginType, Source, SourceKind
-from ..core.config import Config, parse_value
+from ..core.config import parse_value
 from ..core.errors import (
     PluginError,
     SourceManagerError,
     SourceNotFound,
     UnsupportedOperation,
 )
-from ..core.health import best_source, probe_url, test_sources
+from ..core.health import test_sources
 from ..core.paths import config_file, describe_path
 from ..core.plugins import (
     MANIFEST_NAME,
@@ -34,9 +34,9 @@ from ..core.plugins import (
     trust_plugin,
     uninstall_plugin,
 )
-from ..core.registry import normalize_url, source_matches
-from ..core.runtime import SourceManagerRuntime, canonical_manager
-from ..core.selection import selection_key, select_source
+from ..core.registry import source_matches
+from ..core.runtime import ChangePlan, SourceManagerRuntime, canonical_manager
+from ..core.selection import selection_key
 from .output import Output, fit, human_latency, shorten_url
 
 CHINA_HOST_HINTS = (
@@ -1439,10 +1439,6 @@ def plugins_new(runtime: SourceManagerRuntime, args: Any, out: Output) -> int:
 
 def plugins_repo(runtime: SourceManagerRuntime, args: Any, out: Output) -> int:
     paths = runtime.plugin_paths()
-    payload = {
-        "paths": paths,
-        "manifests": [m.to_dict() if hasattr(m, "to_dict") else vars(m) for m in runtime.all_manifests()],
-    }
     if out.json_mode:
         out.json(
             {
