@@ -4,20 +4,53 @@
 > `CLAUDE.md` → `PROGRESS.md` → `git log` → the code named below, then continue from
 > the **NEXT STEP** section. Do not re-plan the project from scratch.
 
-*Last updated: 2026-09-25 (session 3 — M5 beginner menu UI + hard locks, 368 tests green)*
+*Last updated: 2026-09-25 (session 4 — M5.1 视觉重做 + 语言切换 + 状态语义, 387 tests green)*
 *Version: 0.1.0 — GUI deliberately not started (CLI + core only).*
 
 ---
 
 ## 1. Where the project is
 
-**Phase: M5 complete — the beginner menu UI replaced the typed REPL as the default.**
+**Phase: M5.1 complete — 视觉重做（去 emoji / 单一强调色 / 四态状态）+ 语言切换。**
 M3 (engine/plugins/registry) and M4 (frontend split) are frozen; M5 is the
 "my grandmother / a primary-school kid can use it" layer.
 
-Status: **368 tests passing**, 14 manager plugins, 7 source providers (**144 registry
+Status: **387 tests passing**, 14 manager plugins, 7 source providers (**144 registry
 entries**), four frontends, `pip install` verified from a wheel in a clean venv, nothing
 under `/etc` ever written outside the sandboxed test roots (fingerprinted before/after).
+
+### M5.1 — 外观与状态语义（产品负责人反馈后重做）
+
+产品负责人反馈：「界面太 AI 味」「红绿圆点丑」「大色块按钮丑」「缺语言切换」「个别源不可用
+不该报红」。据此定了视觉规范，**写进 `srcmgr/tui/theme.py`，改动前请先读那里的注释**：
+
+| 规则 | 做法 |
+|---|---|
+| 不用 emoji | 只用几何字符：`●` 状态、`◐` 慢、`○` 未测、`▣/▢` 锁、`▸` 当前、`›` 进入 |
+| 只有一个强调色 | 选中/焦点/主操作同色（默认青 `#6fb3c9`，可换 amber/indigo）；其余一律灰阶 |
+| 四态低饱和 | 绿=正常，黄=**备用源失效但下载不受影响**，红=**正在用的源打不开**，灰=未检测 |
+| 颜色不单独表意 | 每个状态都带文字；主源挂了写「正在用的源打不开」，备用源挂了写「N 个备用源失效 · 不影响使用」 |
+| 动作不用色块 | 动作是纯文字：`测速  换到最快  撤销  备份  记录  权限  退出`，只有主操作（测速）带强调色 |
+| 默认深色可切浅色 | `srcmgr-dark-cyber` 系列主题，`general.theme` 可切 `light` |
+| 语言可点 | 顶栏右上角 `语言  中 EN`，鼠标点一下即切换并写入 `general.language`；`Ctrl-L` 也行 |
+
+### M5.2 bugs found and fixed (M5.1 session)
+
+27. **样式表被整张丢弃**：把样式表放在类属性 `CSS` 里 + 自定义主题时，Textual 在
+    `self.theme = …` 的瞬间就解析它，此时主题变量尚未生成，`$muted` 解析失败 →
+    整张表作废 → 所有控件高度为 0（顶栏高度 0，语言按钮根本点不到，表格边框消失）。
+    现在的做法：`theme.register(app, look)` 先注册主题、激活、**再** `add_source()+parse()`，
+    并且 CSS 里只用框架能解析的变量（`$text-muted` 而不是自造的 `$muted`）。
+    回归测试：`tests/test_design.py::test_stylesheet_is_installed_and_references_only_real_variables`
+28. **Textual 默认不接收鼠标事件**（`ENABLE_MOUSE` 默认 False），"鼠标可点"是假的。
+    `SourceManagerApp` 现在显式打开它；语言标签自己也处理点击/回车。
+29. 语言切换后**部分文案仍是旧语言**：状态文本走的是全局 `tr()`（只看环境变量），
+    现在统一走 `app.t()` / `Ecosystem.health_text(translate)`。
+30. 语言切换用 `Screen.rebuild()` 会重建 DOM 并与 worker 抢时序（表格偶发为空）；
+    改成**同步原地改写**文案。
+31. 英文词条缺 20+ 条会"半中半英"；现在中英各 124 条，测试断言两边键集合相等。
+32. 界面里还残留 `❌ ✓ ✗ ⚠` 与 `🔒/🔓`（含 `Ecosystem.lock_text` 这个已无用的方法）；
+    全部换成主题字形，测试用 emoji 正则扫描所有词条与渲染后的单元格。
 
 ### M5 — 面向零基础用户的中文菜单界面
 
@@ -86,10 +119,11 @@ Key design decisions (do not undo these casually):
 | 8 | 14 manager plugins: apt, flatpak, snap, docker, npm, yarn, pnpm, pip, cargo, go, git, maven, rubygems, conda | ✅ | `srcmgr/bundled/managers/*` |
 | 9 | Source registry: 7 providers, 144 entries, `${codename}`/`${distro}` templating, verified mirror URLs | ✅ | `srcmgr/bundled/providers/*` |
 | 10 | Plugin/source-provider marketplace flow (install/trust/uninstall/scaffold) | ✅ | `core/plugins.py`, `cli/commands.py` |
-| 11 | Tests: 368 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt family 16 + shell 26 + locks 14 + menu 24) | ✅ all green | `tests/` |
+| 11 | Tests: 387 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt family 16 + shell 26 + locks 14 + menu 24 + design 19) | ✅ all green | `tests/` |
 | 12 | Docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/{source-providers,architecture,operations,tui}.md`, `LICENSE` | ✅ | repo root, `docs/` |
 | 14 | **M4 frontends**: `--cli` gate, `--gui` reservation, interaction seam, typed REPL | ✅ | `core/interaction.py`, `tui/shell.py` |
 | 15 | **M5 菜单界面**: Textual 首页/镜像页/引导/对话框/锁/鼠标/提权，中文 i18n，桌面图标 | ✅ | `tui/app.py`, `tui/data.py`, `tui/i18n.py`, `tui/sudo.py`, `core/locks.py`, `core/shortcuts.py` |
+| 16 | **M5.1 视觉规范**: 去 emoji、单一强调色、四态低饱和状态、纯文字动作、明暗主题、语言切换 | ✅ | `tui/theme.py`, `tui/i18n.py`, `tui/data.py` |
 | 13 | `pip install -e .` + console scripts `srcmgr` / `source-manager` | ✅ verified | `pyproject.toml` |
 
 ### Bugs found and fixed this session (regression-tested)
@@ -276,6 +310,12 @@ per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
 
 ## 5. Session log (newest first)
 
+* **session 4** — M5.1：按"太 AI 味 / 圆点丑 / 按钮丑 / 缺语言切换 / 个别源失效表意不对"的反馈
+  重做视觉：新增 `tui/theme.py`（调色板+字形+样式表+注册函数）、四态健康语义（备用源失效=黄，
+  主源失效=红）、顶栏（标题+语言切换+锁定数+权限）、动作改纯文字、明暗主题；修 6 个 bug，
+  其中 2 个是"看起来能用其实坏了"（样式表被丢弃 → 顶栏 0 高；鼠标默认关闭）；
+  新增 `tests/test_design.py`（19 个，含 emoji 扫描、色饱和度、词条对齐、样式表回归）。
+  测试 368 → **387**。
 * **session 3** — M5：把默认界面换成 **Textual 中文全屏菜单**（首页状态列表 + 每生态镜像
   选择 + 一键体检 + 一键换最快 + 硬锁 + 备份还原 + 首次引导 + 鼠标 + 中文报错引导 + 提权），
   原 REPL 移到 `--shell`，新增 `--install-shortcut` 桌面图标；新增 `core/locks.py` 与

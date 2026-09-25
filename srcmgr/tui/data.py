@@ -53,10 +53,22 @@ MANAGER_ORDER: tuple[str, ...] = (
 #: entries; everything beyond this is a keystroke away (``显示全部``).
 MAX_VISIBLE_MIRRORS = 12
 
+#: Health phases, ordered by what they mean for the user (not by colour):
+#:
+#: * ``ok``           - the active source answers
+#: * ``spares_down``  - the active source is fine, some *other* enabled source is dead.
+#:                      Downloads still work, so this must NOT look like a failure.
+#: * ``slow``         - the active source answers but is slow
+#: * ``current_down`` - the active source itself is unreachable: this is a real problem
+#: * ``unknown``      - never measured
 HEALTH_OK = "ok"
+HEALTH_SPARES_DOWN = "spares_down"
 HEALTH_SLOW = "slow"
-HEALTH_BAD = "bad"
+HEALTH_CURRENT_DOWN = "current_down"
 HEALTH_UNKNOWN = "unknown"
+
+#: Latency above which a reachable source is called slow.
+SLOW_MS = 1500.0
 
 
 @dataclass
@@ -89,10 +101,12 @@ class Ecosystem:
     reason: str = ""
     current: str = ""
     current_url: str = ""
+    #: health phase of the *active* source plus how many spares are dead
     health: str = HEALTH_UNKNOWN
     latency_ms: float | None = None
     bad_sources: int = 0
     total_sources: int = 0
+    measured: int = 0
     locked: bool = False
     needs_admin: bool = False
     error: str = ""
@@ -101,27 +115,32 @@ class Ecosystem:
     def key(self) -> str:
         return self.manager
 
-    def health_text(self) -> str:
+    def health_text(self, translate: Any = None) -> str:
+        """Words only: colour is decoration, the sentence carries the meaning.
+
+        ``translate`` lets a frontend pass its own translator so the text follows the
+        language *selected in the UI*, not the process default.
+        """
+        t = translate or tr
         if not self.available:
-            return tr("home.not_detected")
-        if self.health == HEALTH_UNKNOWN:
-            return tr("home.health_unknown")
-        if self.health == HEALTH_BAD:
-            return tr("home.health_bad", count=self.bad_sources)
+            return t("home.not_detected")
+        if self.health == HEALTH_UNKNOWN or not self.measured:
+            return t("home.health_unknown")
+        if self.health == HEALTH_CURRENT_DOWN:
+            return t("home.current_down")
+        if self.health == HEALTH_SPARES_DOWN:
+            return t("home.spares_down", count=self.bad_sources)
         if self.health == HEALTH_SLOW:
-            return f"{tr('home.health_warn')} · {_ms(self.latency_ms)}"
-        return f"{tr('home.health_ok')} · {_ms(self.latency_ms)}"
+            extra = f" · {t('home.spares_down', count=self.bad_sources)}" if self.bad_sources else ""
+            return f"{t('home.health_warn')} · {_ms(self.latency_ms)}{extra}"
+        if self.bad_sources:
+            return f"{t('home.health_ok')} · {_ms(self.latency_ms)} · {t('home.spares_down', count=self.bad_sources)}"
+        return f"{t('home.health_ok')} · {_ms(self.latency_ms)}"
 
     def current_text(self) -> str:
         if not self.available:
             return "—"
         return self.current or tr("home.no_source")
-
-    def lock_text(self) -> str:
-        """The lock cell: always visible, always says what clicking does."""
-        if self.locked:
-            return f"🔒 {tr('lock.unlock')}"
-        return f"🔓 {tr('lock.lock')}"
 
 
 @dataclass
@@ -145,7 +164,7 @@ class Mirror:
         if self.ok is None:
             return tr("eco.no_health")
         if not self.ok:
-            return f"❌ {tr('eco.probe_failed')}"
+            return f"{'✗'} {tr('eco.probe_failed')}"
         return _ms(self.latency_ms)
 
     @property
@@ -295,17 +314,40 @@ def load_ecosystem(runtime: SourceManagerRuntime, manager: str) -> Ecosystem:
             if current is not None:
                 row.current = current.name
                 row.current_url = current.url
-                cached = _cached_health(runtime, current.id)
-                if cached is not None:
-                    row.health = HEALTH_OK if cached.ok else HEALTH_BAD
-                    row.latency_ms = cached.latency_ms
-            row.bad_sources = sum(
-                1
-                for source in installed
-                if (cached := _cached_health(runtime, source.id)) is not None and not cached.ok
-            )
-            if row.bad_sources:
-                row.health = HEALTH_BAD
+
+            # Judge by impact: a dead *spare* source must not look like a failure.
+            measured = 0
+            bad_spares = 0
+            current_result = None
+            for source in installed:
+                cached = _cached_health(runtime, source.id)
+                if cached is None:
+                    continue
+                measured += 1
+                is_active = current is not None and (
+                    source.id == current.id or _same_mirror(source.url, current.url)
+                )
+                if is_active:
+                    current_result = cached
+                elif not cached.ok:
+                    bad_spares += 1
+            row.measured = measured
+            row.bad_sources = bad_spares
+            if current_result is not None:
+                if not current_result.ok:
+                    row.health = HEALTH_CURRENT_DOWN
+                elif (current_result.latency_ms or 0) > SLOW_MS:
+                    row.health = HEALTH_SLOW
+                elif bad_spares:
+                    row.health = HEALTH_SPARES_DOWN
+                else:
+                    row.health = HEALTH_OK
+                row.latency_ms = current_result.latency_ms
+            elif measured:
+                # only spares were measured (the active entry is not in the cache)
+                row.health = HEALTH_SPARES_DOWN if bad_spares else HEALTH_UNKNOWN
+            else:
+                row.health = HEALTH_UNKNOWN
     except SourceManagerError as exc:
         row.error = exc.message
     return row
@@ -712,7 +754,8 @@ def restore_backup(runtime: SourceManagerRuntime, backup_id: str) -> Outcome:
 
 __all__ = [
     "Ecosystem",
-    "HEALTH_BAD",
+    "HEALTH_CURRENT_DOWN",
+    "HEALTH_SPARES_DOWN",
     "HEALTH_OK",
     "HEALTH_SLOW",
     "HEALTH_UNKNOWN",
@@ -720,6 +763,7 @@ __all__ = [
     "MANAGER_ORDER",
     "Mirror",
     "Outcome",
+    "SLOW_MS",
     "SwitchPlan",
     "apply_fastest",
     "backup_rows",

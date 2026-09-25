@@ -132,10 +132,12 @@ def test_load_ecosystems_describes_every_manager(isolated_env, apt_tree):
     assert apt.needs_admin is True, "APT writes to /etc and needs admin rights"
     assert by_name.get("npm") is not None
     assert by_name["npm"].needs_admin is False
-    # the lock cell always says what clicking does
-    assert "锁定" in apt.lock_text()
+    # the lock cell is rendered from the theme glyphs (see tests/test_design.py)
+    from srcmgr.tui.app import _lock_cell
+
+    assert "锁定" in _lock_cell(apt)
     apt.locked = True
-    assert apt.lock_text().startswith("🔒")
+    assert _lock_cell(apt).startswith("▣")
 
 
 def test_switch_refuses_a_locked_ecosystem(isolated_env, apt_tree):
@@ -229,9 +231,10 @@ def test_friendly_error_translates_technical_failures():
 
 
 def test_strings_are_chinese_by_default():
-    assert tr("action.scan").startswith("🩺")
-    assert "体检" in tr("action.scan")
-    assert tr("lock.lock") == "点这里锁定"
+    """Plain Chinese words, no icon prefixes (the design refresh removed them)."""
+    assert tr("action.scan") == "测速"
+    assert tr("lock.lock") == "锁定"
+    assert tr("action.fastest") == "换到最快"
 
 
 # ---------------------------------------------------------------------------

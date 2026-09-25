@@ -30,12 +30,13 @@ from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
+from textual.events import Click
 from textual.screen import ModalScreen, Screen
+from textual.widget import Widget
 from textual.widgets import (
     Button,
     DataTable,
     Footer,
-    Header,
     Input,
     Label,
     ListItem,
@@ -49,7 +50,15 @@ from ..core.errors import LockedError, SourceManagerError
 from ..core.paths import is_root
 from ..core.runtime import SourceManagerRuntime, canonical_manager
 from . import data as D
-from .i18n import friendly_error, tr
+from . import theme as ui
+from .i18n import (
+    LANGUAGE_CHOICES,
+    current_language,
+    friendly_error,
+    other_language,
+    remember_language,
+    tr,
+)
 from .sudo import SudoSession
 
 ONBOARDING_KEY = "general.seen_onboarding"
@@ -78,6 +87,32 @@ def _ms(value: float | None) -> str:
     return f"{value:.0f}ms"
 
 
+#: Mark shown next to the status words.  One glyph shape, four colours - the words do
+#: the explaining, the colour only speeds up scanning.
+STATUS_MARK = {
+    D.HEALTH_OK: ui.GLYPHS["ok"],
+    D.HEALTH_SPARES_DOWN: ui.GLYPHS["warn"],
+    D.HEALTH_SLOW: ui.GLYPHS["slow"],
+    D.HEALTH_CURRENT_DOWN: ui.GLYPHS["bad"],
+    D.HEALTH_UNKNOWN: ui.GLYPHS["unknown"],
+}
+
+
+def _status_cell(eco: D.Ecosystem, translate=tr) -> str:
+    """``● 正常 · 108ms`` - a mark plus words, never colour alone."""
+    if not eco.available:
+        return f"{ui.GLYPHS['unknown']} {translate('home.not_detected')}"
+    mark = STATUS_MARK.get(eco.health, ui.GLYPHS["unknown"])
+    return f"{mark} {eco.health_text(translate)}"
+
+
+def _lock_cell(eco: D.Ecosystem, translate=tr) -> str:
+    """Always visible, always says what a click does."""
+    if eco.locked:
+        return f"{ui.GLYPHS['locked']} {translate('lock.unlock')}"
+    return f"{ui.GLYPHS['unlocked']} {translate('lock.lock')}"
+
+
 def _is_permission_error(exc: BaseException) -> bool:
     """True for "needs root" failures, wherever they surfaced from."""
     from ..core.errors import PermissionDenied
@@ -94,6 +129,79 @@ def _is_permission_error(exc: BaseException) -> bool:
 # ---------------------------------------------------------------------------
 # dialogs
 # ---------------------------------------------------------------------------
+class StatusBar(Widget):
+    """The window's top bar.
+
+    Hand-built instead of ``Header`` because it needs three things the stock widget does
+    not offer: a **clickable language switch** (so a child can change the language without
+    knowing any command), a lock counter, and an admin badge.
+    """
+
+    # The look (including this bar's colours) is defined once in
+    # :data:`srcmgr.tui.theme.STYLESHEET`; see ``theme.register`` for why the stylesheet
+    # cannot live in a class attribute.
+    def __init__(self) -> None:
+        super().__init__()
+        self.lock_text = ""
+        self.admin_text = ""
+
+    class LanguageLabel(Static):
+        """Focusable so the language switch is reachable by mouse *and* by keyboard."""
+
+        can_focus = True
+
+        def on_click(self, event: Click) -> None:
+            """Switch the language; the label is the most obvious thing to click."""
+            event.stop()
+            self.app.switch_language()
+
+        def on_key(self, event) -> None:  # noqa: ANN001 - Enter/Space when focused
+            if getattr(event, "key", "") in {"enter", "space"}:
+                event.stop()
+                self.app.switch_language()
+
+    def compose(self) -> ComposeResult:
+        from textual.widgets import Static as _Static
+
+        with Horizontal(id="bar-top"):
+            yield _Static("", id="bar-title")
+            yield self.LanguageLabel("", id="bar-language")
+        yield _Static("", id="bar-status")
+
+    def on_click(self, event: Click) -> None:
+        """Any click on the language area switches (the widget is small and obvious)."""
+        if getattr(event.widget, "id", "") == "bar-language":
+            self.app.switch_language()
+
+    def on_mount(self) -> None:
+        self.refresh_content()
+
+    def retranslate(self) -> None:
+        self.refresh_content()
+
+    def refresh_content(self) -> None:
+        from textual.widgets import Static as _Static
+
+        app = self.app
+        language = getattr(app, "language", "zh")
+        self.query_one("#bar-title", _Static).update(f"{APP_NAME}　{tr('app.subtitle')}")
+        label = " ".join(
+            (
+                f"[b {ui.STYLE_ACCENT}]{text}[/]"
+                if code == language
+                else f"{text}"
+            )
+            for code, text in LANGUAGE_CHOICES
+        )
+        self.query_one("#bar-language", _Static).update(f"{tr('lang.switch')}  {label}")
+        parts = [part for part in (self.lock_text, self.admin_text) if part]
+        self.query_one("#bar-status", _Static).update("　".join(parts))
+
+    @on(Click, "#bar-language")
+    def _switch_language(self) -> None:
+        self.app.switch_language()
+
+
 class ConfirmDialog(ModalScreen[bool]):
     """Yes/no question.  ``Esc`` cancels (the safe default), ``y``/``n`` also work."""
 
@@ -141,7 +249,7 @@ class PasswordDialog(ModalScreen[str | None]):
             yield Label(tr("admin.needed_title"), classes="dialog-title")
             yield Static(tr("admin.needed_body"), classes="dialog-body")
             if self.error:
-                yield Static(f"❌ {self.error}", classes="dialog-error")
+                yield Static(f"{ui.GLYPHS['cross']} {self.error}", classes="dialog-error")
             yield Input(password=True, placeholder=tr("admin.password"), id="password")
             with Horizontal(classes="dialog-buttons"):
                 yield Button(tr("common.yes"), id="ok", variant="primary")
@@ -245,29 +353,32 @@ class HomeScreen(Screen[None]):
 
     # -- layout --------------------------------------------------------------
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=False)
+        yield from self._build()
+
+    def _build(self) -> ComposeResult:
+        yield StatusBar()
         with Vertical(id="home"):
-            yield Static(tr("home.question"), id="question")
-            yield Static(tr("home.loading"), id="loading")
+            yield Static(self.app.t("home.question"), classes="page-title", id="question")
+            yield Static(self.app.t("home.hint"), classes="page-sub", id="hint-top")
+            yield Static(self.app.t("home.loading"), id="loading")
             yield DataTable(id="ecosystems", cursor_type="row", zebra_stripes=True)
             with Horizontal(id="actions"):
-                yield Button(tr("action.scan"), id="scan", variant="primary")
-                yield Button(tr("action.fastest"), id="fastest", variant="success")
-                yield Button(tr("action.undo"), id="undo")
-                yield Button(tr("action.backups"), id="backups")
-                yield Button(tr("action.history"), id="history")
-                yield Button(tr("action.admin"), id="admin")
-                yield Button(tr("action.quit"), id="quit")
-            yield Static(tr("home.hint"), id="hint")
+                yield Button(self.app.t("action.scan"), id="scan", classes="-primary")
+                yield Button(self.app.t("action.fastest"), id="fastest")
+                yield Button(self.app.t("action.undo"), id="undo")
+                yield Button(self.app.t("action.backups"), id="backups")
+                yield Button(self.app.t("action.history"), id="history")
+                yield Button(self.app.t("action.admin"), id="admin")
+                yield Button(self.app.t("action.quit"), id="quit")
         yield Footer()
 
     def on_mount(self) -> None:
         table = self.query_one("#ecosystems", DataTable)
-        table.add_column("", key="mark", width=3)
-        table.add_column(tr("home.col_software"), key="software")
-        table.add_column(tr("home.col_current"), key="name")
-        table.add_column(tr("home.col_state"), key="state", width=22)
-        table.add_column(tr("home.col_lock"), key="lock", width=26)
+        table.add_column("", key="mark", width=2)
+        table.add_column(self.app.t("home.col_software"), key="software")
+        table.add_column(self.app.t("home.col_current"), key="name")
+        table.add_column(self.app.t("home.col_state"), key="state", width=30)
+        table.add_column(self.app.t("home.col_lock"), key="lock", width=22)
         self.reload()
 
     # -- data ----------------------------------------------------------------
@@ -300,21 +411,25 @@ class HomeScreen(Screen[None]):
     def _load_failed(self, message: str) -> None:
         self.loading = False
         what, todo = friendly_error(message)
-        self.query_one("#loading", Static).update(f"❌ {what} {todo}")
+        self.query_one("#loading", Static).update(f"{ui.GLYPHS['cross']} {what} {todo}")
 
-    def _show(self, ecosystems: list[D.Ecosystem]) -> None:
-        self.ecosystems = ecosystems
-        table = self.query_one("#ecosystems", DataTable)
+    def _fill(self, table: DataTable, ecosystems: list[D.Ecosystem]) -> None:
+        """Write the rows (headers must already exist)."""
         table.clear()
         for eco in ecosystems:
             table.add_row(
                 self._mark(eco),
                 eco.name,
                 eco.current_text(),
-                eco.health_text(),
-                eco.lock_text(),
+                _status_cell(eco, self.app.t),
+                _lock_cell(eco, self.app.t),
                 key=eco.manager,
             )
+
+    def _show(self, ecosystems: list[D.Ecosystem]) -> None:
+        self.ecosystems = ecosystems
+        table = self.query_one("#ecosystems", DataTable)
+        self._fill(table, ecosystems)
         self.loading = False
         self.query_one("#loading", Static).display = False
         self._show_offline_note()
@@ -324,25 +439,59 @@ class HomeScreen(Screen[None]):
         self._update_header()
 
     def _mark(self, eco: D.Ecosystem) -> str:
+        """One narrow mark per row: the lock, else the health phase."""
         if eco.locked:
-            return "🔒"
-        if not eco.available:
-            return "⚪"
-        if eco.health == D.HEALTH_BAD:
-            return "🔴"
-        if eco.health == D.HEALTH_SLOW:
-            return "🟡"
-        if eco.health == D.HEALTH_OK:
-            return "🟢"
-        return "⚫"
+            return ui.GLYPHS["locked"]
+        return STATUS_MARK.get(eco.health, ui.GLYPHS["unknown"])
 
     def _update_header(self) -> None:
-        locked = [eco for eco in self.ecosystems if eco.locked]
-        text = tr("home.locked_summary", count=len(locked)) if locked else ""
         try:
-            self.query_one(Header).sub_text = text  # type: ignore[attr-defined]
-        except Exception:  # noqa: BLE001 - older Textual without sub_text
+            self.app._refresh_status_bar()
+        except Exception:  # noqa: BLE001 - the bar is cosmetic
             pass
+
+    def retranslate(self) -> None:
+        """Re-apply every label in place (called when the language changes).
+
+        Synchronous on purpose: a language switch must be instant and must not race with
+        a worker, so this only rewrites text that already exists.
+        """
+        t = self.app.t
+        try:
+            self.query_one("#question", Static).update(t("home.question"))
+            self.query_one("#hint-top", Static).update(t("home.hint"))
+        except Exception:  # noqa: BLE001 - mid-rebuild
+            return
+        table = self.query_one("#ecosystems", DataTable)
+        for key, label in (
+            ("software", t("home.col_software")),
+            ("name", t("home.col_current")),
+            ("state", t("home.col_state")),
+            ("lock", t("home.col_lock")),
+        ):
+            column = table.columns.get(key)
+            if column is not None:
+                column.label = label
+        for eco in self.ecosystems:
+            try:
+                table.update_cell(eco.manager, "state", _status_cell(eco, t))
+                table.update_cell(eco.manager, "lock", _lock_cell(eco, t))
+            except Exception:  # noqa: BLE001
+                continue
+        for button_id, key in (
+            ("scan", "action.scan"),
+            ("fastest", "action.fastest"),
+            ("undo", "action.undo"),
+            ("backups", "action.backups"),
+            ("history", "action.history"),
+            ("admin", "action.admin"),
+            ("quit", "action.quit"),
+        ):
+            try:
+                self.query_one(f"#{button_id}", Button).label = t(key)
+            except Exception:  # noqa: BLE001
+                continue
+        self._update_header()
 
     # -- selection -----------------------------------------------------------
     @property
@@ -360,7 +509,7 @@ class HomeScreen(Screen[None]):
         table = self.query_one("#ecosystems", DataTable)
         for eco in self.ecosystems:
             try:
-                table.update_cell(eco.manager, "lock", eco.lock_text())
+                table.update_cell(eco.manager, "lock", _lock_cell(eco, self.app.t))
                 table.update_cell(eco.manager, "mark", self._mark(eco))
             except Exception:  # noqa: BLE001 - the table may be mid-reload
                 continue
@@ -470,7 +619,10 @@ class EcosystemScreen(Screen[None]):
 
     # -- layout --------------------------------------------------------------
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=False)
+        yield from self._build()
+
+    def _build(self) -> ComposeResult:
+        yield StatusBar()
         with Vertical(id="eco"):
             with Horizontal(id="eco-head"):
                 yield Button(tr("common.back"), id="back")
@@ -493,6 +645,25 @@ class EcosystemScreen(Screen[None]):
         self.refresh_state()
         self.measure()
 
+    def retranslate(self) -> None:
+        """Re-apply the labels and repaint the list, synchronously."""
+        t = self.app.t
+        try:
+            self.query_one("#back", Button).label = t("common.back")
+            self.query_one("#eco-question", Static).update(t("eco.choose"))
+            self.query_one("#eco-hint", Static).update(t("eco.footer"))
+            self.query_one("#eco-testing", Static).update(t("eco.testing"))
+            for button_id, key in (
+                ("custom", "eco.custom"),
+                ("rescan", "eco.rescan"),
+                ("undo", "eco.undo"),
+                ("backups", "eco.backups"),
+            ):
+                self.query_one(f"#{button_id}", Button).label = t(key)
+        except Exception:  # noqa: BLE001 - mid-rebuild
+            return
+        self._paint()
+
     # -- state ---------------------------------------------------------------
     def refresh_state(self) -> None:
         self.eco = D.load_ecosystem(self.app.runtime, self.manager)
@@ -507,7 +678,7 @@ class EcosystemScreen(Screen[None]):
         title = self.query_one("#eco-title", Label)
         lock = self.query_one("#eco-lock", Label)
         if eco is not None:
-            title.update(("🔒 " if eco.locked else "") + eco.name)
+            title.update((ui.GLYPHS["locked"] + " " if eco.locked else "") + eco.name)
             lock.update(tr("lock.locked_row") if eco.locked else tr("lock.unlocked_row"))
             lock.set_class(eco.locked, "locked")
         current = self.query_one("#eco-current", Static)
@@ -644,7 +815,10 @@ class TableScreen(Screen[None]):
         self.on_row = on_row
 
     def compose(self) -> ComposeResult:
-        yield Header(show_clock=False)
+        yield from self._build()
+
+    def _build(self) -> ComposeResult:
+        yield StatusBar()
         with Vertical(id="table-screen"):
             with Horizontal(id="table-head"):
                 yield Button(tr("common.back"), id="back")
@@ -670,6 +844,14 @@ class TableScreen(Screen[None]):
             table.focus()
         label = self.query_one("#table-title", Label)
         label.update(f"{self.title_text}　（{len(self.rows)}）" if self.rows else self.title_text)
+
+    def retranslate(self) -> None:
+        """Titles come from the caller, so only the shared labels need redrawing."""
+        t = self.app.t
+        try:
+            self.query_one("#back", Button).label = t("common.back")
+        except Exception:  # noqa: BLE001
+            pass
 
     def _selected_key(self) -> str:
         row = self.query_one("#rows", DataTable).cursor_row
@@ -698,49 +880,24 @@ class TableScreen(Screen[None]):
 class SourceManagerApp(App[None]):
     """The menu application: home screen, dialogs, workers and admin handling."""
 
-    TITLE = tr("app.title")
+    #: Kept for window managers that read these; the real labels live in the StatusBar.
+    TITLE = APP_NAME
     SUB_TITLE = tr("app.subtitle")
     ENABLE_COMMAND_PALETTE = False  # a beginner has no use for Ctrl+P
+    #: Mouse support is a product requirement for this frontend: a Windows user reaches
+    #: for the pointer first.  Textual has it off by default.
+    ENABLE_MOUSE = True
     #: ``q`` must leave the app from *any* screen (a beginner presses q when lost);
     #: screens that need it for something else can still shadow it.
     BINDINGS = [
         Binding("q", "quit_app", "退出"),
         Binding("ctrl+q", "quit_app", "退出", show=False),
         Binding("f1", "help", "帮助", show=False),
+        Binding("ctrl+l", "switch_language", "语言", show=False),
     ]
-    CSS = """
-    Screen { background: $surface; }
-    #home { padding: 1 2; }
-    #question { text-style: bold; padding-bottom: 1; }
-    #loading { color: $text-warning; padding-bottom: 1; }
-    DataTable { height: 1fr; border: round $primary; }
-    #actions, #eco-actions { height: auto; padding-top: 1; }
-    #actions Button, #eco-actions Button { margin-right: 1; }
-    #hint, #eco-hint { color: $text-muted; padding-top: 1; }
-    #eco { padding: 1 2; }
-    #eco-head { height: auto; }
-    #eco-title { text-style: bold; padding: 0 1; width: 1fr; }
-    #eco-lock { color: $text-success; width: auto; }
-    #eco-lock.locked { color: $text-error; text-style: bold; }
-    #eco-current { padding: 1 0; }
-    #eco-testing { color: $text-warning; }
-    #mirrors { height: 1fr; border: round $primary; }
-    #mirrors ListItem { padding: 0 1; }
-    #mirrors ListItem.current { color: $text-success; }
-    #table-screen { padding: 1 2; }
-    #table-head { height: auto; }
-    #table-title { text-style: bold; padding: 0 1; width: 1fr; }
-    #rows { height: 1fr; border: round $primary; }
-    .dialog {
-        width: 74; height: auto; padding: 1 2; border: thick $accent;
-        background: $panel; margin: 4 8;
-    }
-    .dialog-title { text-style: bold; padding-bottom: 1; }
-    .dialog-body { padding-bottom: 1; }
-    .dialog-error { color: $text-error; padding-bottom: 1; }
-    .dialog-buttons { height: auto; align-horizontal: right; }
-    .dialog-buttons Button { margin-left: 1; }
-    """
+    #: The look lives in :mod:`srcmgr.tui.theme` and is installed by
+    #: :func:`srcmgr.tui.theme.register` (see the note there about why a class-level
+    #: ``CSS`` cannot be used with a custom theme).
 
     def __init__(
         self,
@@ -752,6 +909,12 @@ class SourceManagerApp(App[None]):
     ) -> None:
         super().__init__()
         self.config = config or Config.load()
+        self.language = current_language()
+        self.look = ui.Look(mode=str(self.config.get("general.theme", "dark") or "dark"))
+        # Register BEFORE assigning: setting an unregistered theme is silently ignored by
+        # Textual, which then fails to resolve this app's CSS variables and drops the whole
+        # stylesheet (every widget collapses to zero size).
+        ui.register(self, self.look)
         self.runtime = runtime or SourceManagerRuntime(config=self.config)
         self.sudo = sudo or SudoSession()
         self._force_onboarding = show_onboarding
@@ -763,6 +926,58 @@ class SourceManagerApp(App[None]):
         #: set as soon as the password has been requested once for this run; the retry
         #: path consults it so a refused action explains itself instead of re-prompting
         self._admin_refused = False
+
+    # -- language ------------------------------------------------------------
+    def t(self, key: str, **values: Any) -> str:
+        """Translate in the *currently selected* language."""
+        return tr(key, language=self.language, **values)
+
+    def switch_language(self, code: str | None = None) -> None:
+        """Toggle (or set) the UI language, remember it and rebuild the screens."""
+        target = code or other_language(self.language)
+        self.language = target
+        remember_language(target)
+        self.rebuild_screens()
+        self.info(self.t("lang.switched"))
+
+    def rebuild_screens(self) -> None:
+        """Refresh every visible label after a language change.
+
+        Screens implement ``retranslate()``; updating the text in place is safer than
+        re-mounting them (a switch must work while a dialog is open, and re-mounting can
+        disturb pending callbacks).
+        """
+        for screen in list(self.screen_stack):
+            retranslate = getattr(screen, "retranslate", None)
+            if callable(retranslate):
+                try:
+                    retranslate()
+                except Exception:  # noqa: BLE001 - a screen mid-transition is not fatal
+                    continue
+        self._refresh_status_bar()
+
+    def _refresh_status_bar(self) -> None:
+        for screen in self.screen_stack:
+            bar = screen.query(StatusBar)
+            if not bar:
+                continue
+            widget = bar.first()
+            widget.lock_text = self._lock_summary()
+            widget.admin_text = self._admin_summary()
+            widget.refresh_content()
+
+    def _lock_summary(self) -> str:
+        try:
+            locked = self.runtime.locked_managers()
+        except Exception:  # noqa: BLE001
+            return ""
+        if not locked:
+            return ""
+        return f"{ui.GLYPHS['locked']} {self.t('home.locked_summary', count=len(locked))}"
+
+    def _admin_summary(self) -> str:
+        text = self.t("home.admin_ok") if self.has_admin else self.t("home.admin_missing")
+        return text
 
     # -- lifecycle -----------------------------------------------------------
     def on_mount(self) -> None:
