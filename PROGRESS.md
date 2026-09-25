@@ -209,6 +209,12 @@ Key design decisions (do not undo these casually):
 了 `~/.npmrc`（18:00）以及 `~/.config|~/.local/share|~/.cache/source-manager`（18:02–18:04）。
 已全部删除并恢复 npm 官方默认源。
 
+**第三次同类（session 5 发现）**：M5.1 期间的手写脚本（`/tmp/look.py` 等）只设了
+`SRCMGR_*`、没设 `HOME`/`XDG_CACHE_HOME`，于是 `~/.config/source-manager/config.yaml` 与
+`~/.cache/source-manager/health.json` 落到真实 HOME（19:19–19:20）。已删除，真实 HOME 现在
+4/4 干净。**结论：只设 `SRCMGR_*` 是不够的**，`XDG_*`/`HOME` 也必须一起设——这正是包装脚本
+存在的意义。
+
 **已采取的实际措施**（不要再只靠"记得"）：
 用仓库里的包装脚本跑任何手动验证，它把 `HOME` 和所有 `SRCMGR_*` 根目录都指向沙箱：
 
@@ -218,6 +224,8 @@ scripts/hermetic.sh .venv/bin/python bin/srcmgr          # 菜单界面
 ```
 
 `tests/conftest.py::_refuse_real_home` 是第二道防线（测试里若指向真 HOME 立刻失败）。
+想真的在自己机器上跑/演示时用 `SRCMGR_ALLOW_REAL_HOME=1 scripts/hermetic.sh …`（会明确警告），
+需要干净沙箱做首启演示时用 `SRCMGR_FRESH=1`。
 
 ### M5 bugs found and fixed (regression-tested)
 

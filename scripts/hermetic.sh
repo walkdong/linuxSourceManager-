@@ -13,6 +13,17 @@
 set -eu
 
 SANDBOX="${SRCMGR_SANDBOX:-/tmp/srcmgr-sandbox}"
+
+# SRCMGR_ALLOW_REAL_HOME=1 runs against the developer's own configuration on purpose -
+# for trying an install for real, or demoing.  Everything else is sandboxed, always.
+if [ "${SRCMGR_ALLOW_REAL_HOME:-0}" = "1" ]; then
+    echo "warning: running with your REAL home/configuration" >&2
+    exec "$@"
+fi
+
+# The sandbox is recreated when SRCMGR_FRESH=1, which is what you want for a first-run demo.
+[ "${SRCMGR_FRESH:-0}" = "1" ] && rm -rf "$SANDBOX"
+
 mkdir -p "$SANDBOX/home" "$SANDBOX/etc-apt"
 
 # A fake apt root so even a root-level write stays inside the sandbox.
