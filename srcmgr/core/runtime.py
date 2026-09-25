@@ -297,16 +297,44 @@ class SourceManagerRuntime:
         kinds: Sequence[str] | None = None,
         country: str | None = None,
     ) -> list[Source]:
+        """The catalogue for ``manager``: registry providers, else the plugin's own list.
+
+        Some ecosystems (snap) have no mirror catalogue at all, only their upstream store;
+        those managers declare it in ``plugin.list_available()``, and it must still be
+        visible (and addable) when a filter was passed - hence the fallback happens before
+        filtering rather than after.
+        """
         plugin = self.plugin(manager)
         if query or kinds or country:
-            return self.registry.search(
-                plugin.name, query, kinds=kinds or [], country=country
-            )
+            found = self.registry.search(plugin.name, query, kinds=kinds or [], country=country)
+            if found:
+                return found
+            return self._filter_local_catalogue(plugin, query=query, kinds=kinds, country=country)
         sources = self.registry.sources_for(plugin.name)
         if sources:
             return sources
-        # A manager plugin may declare its own catalogue (e.g. discovered from the OS).
         return list(plugin.list_available(plugin.name))
+
+    def _filter_local_catalogue(
+        self,
+        plugin: ManagerPlugin,
+        *,
+        query: str = "",
+        kinds: Sequence[str] | None = None,
+        country: str | None = None,
+    ) -> list[Source]:
+        """Apply the same filters to a plugin's built-in catalogue."""
+        wanted = {str(k).lower() for k in (kinds or [])}
+        needle = (query or "").strip().lower()
+        out: list[Source] = []
+        for source in plugin.list_available(plugin.name):
+            kind = source.kind.value if hasattr(source.kind, "value") else str(source.kind)
+            if wanted and kind.lower() not in wanted:
+                continue
+            if needle and needle not in f"{source.name} {source.url} {source.description}".lower():
+                continue
+            out.append(source)
+        return out
 
     def resolve_available(self, manager: str, spec: str) -> Source:
         return select_source(spec, self.available(manager), what=f"{manager} source")

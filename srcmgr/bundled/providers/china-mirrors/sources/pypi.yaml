@@ -62,7 +62,7 @@ sources:
     url: https://repo.huaweicloud.com/repository/pypi/simple
     scope: user
     description: Huawei Cloud PyPI mirror.
-    homepage: https://repo.huaweicloud.com/repository/pypi/
+    homepage: https://mirrors.huaweicloud.com/
     extra:
       countries: [cn]
     health:

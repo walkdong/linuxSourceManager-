@@ -103,6 +103,21 @@ def _ref(source: Source, index: int | None = None, installed: bool = False) -> s
     return f"{prefix}:{source.id}"
 
 
+def _state_label(marks: Sequence[str]) -> str:
+    """Join state markers without duplicates, keeping the most specific last.
+
+    ``state`` for an enabled source that is also the ecosystem default must read
+    ``enabled,current`` - not ``enabled,disabled,current``.
+    """
+    seen: list[str] = []
+    for mark in marks:
+        if mark and mark not in seen:
+            seen.append(mark)
+    if "enabled" in seen:
+        seen = [m for m in seen if m != "disabled"]
+    return ",".join(seen) or "-"
+
+
 def _source_rows(runtime: SourceManagerRuntime, sources: Sequence[Source]) -> list[list[str]]:
     manager = sources[0].manager if sources else ""
     installed = []
@@ -134,7 +149,7 @@ def _source_rows(runtime: SourceManagerRuntime, sources: Sequence[Source]) -> li
                 _host(source.url),
                 source.suite or "-",
                 _kind_of(source).value,
-                ",".join(marks) or "-",
+                _state_label(marks),
                 source.id,
             ]
         )
@@ -937,6 +952,18 @@ def manager_available(runtime: SourceManagerRuntime, args: Any, out: Output) -> 
             print(line)
         return 0
     groups = runtime.registry.groups_for(manager)
+    if not groups:
+        # Managers without a mirror catalogue (snap) still expose their upstream store
+        # through the plugin, so show that instead of an empty "no providers" line.
+        if available:
+            out.print(
+                out.strong(f"{manager} upstream")
+                + out.dim("  [declared by the manager plugin, no provider needed]")
+            )
+            _print_sources(runtime, out, available)
+        else:
+            out.print(out.dim("no source providers for this manager"))
+        return 0
     for group in groups:
         items = _filter_sources(group.sources, args)
         if not items:
@@ -946,8 +973,6 @@ def manager_available(runtime: SourceManagerRuntime, args: Any, out: Output) -> 
             out.print(out.dim(f"  {group.description}"))
         _print_sources(runtime, out, items)
         out.print("")
-    if not groups:
-        out.print(out.dim("no source providers for this manager"))
     return 0
 
 

@@ -1,9 +1,11 @@
 # Git URL-rewrite mirrors (url.<base>.insteadOf https://github.com/).
 #
 # Each entry sets extra.instead_of so `git clone https://github.com/owner/repo` is
-# transparently rewritten to the mirror.  All four proxies were verified to speak Git
-# smart HTTP: GET <base><owner>/<repo>.git/info/refs?service=git-upload-pack returns
-# 200 with content-type application/x-git-upload-pack-advertisement.
+# transparently rewritten to the mirror.  The health URL is the Git smart-HTTP
+# advertisement of a tiny public repository (octocat/Hello-World) rather than the bare
+# host root: a 200 with content-type application/x-git-upload-pack-advertisement proves
+# the proxy really serves Git, while the roots answer 403/404 for plain HTTP clients.
+# All four were verified that way (HEAD is refused with 405/500, GET returns 200).
 #
 # These are third-party proxies: the operator can see every request, so use them for
 # public repositories and keep the official GitHub URL for anything private.
@@ -22,7 +24,8 @@ sources:
       countries: [cn]
       instead_of: ["https://github.com/"]
     health:
-      url: https://gitclone.com/
+      method: GET
+      url: https://gitclone.com/github.com/octocat/Hello-World.git/info/refs?service=git-upload-pack
 
   - key: ghproxy-net
     name: ghproxy.net
@@ -37,7 +40,8 @@ sources:
       countries: [cn]
       instead_of: ["https://github.com/"]
     health:
-      url: https://ghproxy.net/
+      method: GET
+      url: https://ghproxy.net/https://github.com/octocat/Hello-World.git/info/refs?service=git-upload-pack
 
   - key: gh-proxy
     name: gh-proxy.com
@@ -52,7 +56,8 @@ sources:
       countries: [cn]
       instead_of: ["https://github.com/"]
     health:
-      url: https://gh-proxy.com/
+      method: GET
+      url: https://gh-proxy.com/https://github.com/octocat/Hello-World.git/info/refs?service=git-upload-pack
 
   - key: ghfast
     name: ghfast.top
@@ -67,4 +72,6 @@ sources:
       countries: [cn]
       instead_of: ["https://github.com/"]
     health:
-      url: https://ghfast.top/
+      method: GET
+      url: https://ghfast.top/https://github.com/octocat/Hello-World.git/info/refs?service=git-upload-pack
+

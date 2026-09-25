@@ -38,7 +38,7 @@ sources:
     url: https://repo.huaweicloud.com/repository/maven/
     scope: user
     description: Huawei Cloud Maven repository mirror.
-    homepage: https://repo.huaweicloud.com/repository/maven/
+    homepage: https://mirrors.huaweicloud.com/
     extra:
       countries: [cn]
       mirror_of: "*"
