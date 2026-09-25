@@ -17,14 +17,35 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-#: Directories that must never be touched by a test run.
-PROTECTED_PATHS = (
-    Path("/etc/apt"),
-    Path("/etc/docker"),
-    Path("/etc/flatpak"),
-    Path("/etc/pip.conf"),
-    Path("/etc/npmrc"),
-)
+#: The developer's real home, captured before any fixture can monkeypatch it.  A test or a
+#: plugin that writes here would silently change the machine running the suite (it has
+#: happened: a manual debug script that forgot to redirect $HOME left a ~/.npmrc behind).
+REAL_HOME = Path(os.path.expanduser("~")).resolve()
+
+
+@pytest.fixture(autouse=True)
+def _refuse_real_home():
+    """Fail loudly when a test would write to the developer's real home.
+
+    The check is one-directional on purpose: ``$HOME`` is normally already the real home
+    when the suite starts (that is the ambient value, not a mistake) — what must never
+    happen is a *test* leaving it that way and then running something that writes.  The
+    tool's own roots are the ones that matter, so if they resolve inside the real home the
+    test is about to touch the machine.
+    """
+    for key in ("SRCMGR_CONFIG_HOME", "SRCMGR_DATA_HOME", "SRCMGR_CACHE_HOME"):
+        value = os.environ.get(key)
+        if not value:
+            continue
+        try:
+            resolved = Path(value).resolve()
+        except OSError:  # pragma: no cover
+            continue
+        assert REAL_HOME not in resolved.parents and resolved != REAL_HOME, (
+            f"{key}={resolved} is inside the real home ({REAL_HOME}); this test would "
+            "modify the machine.  Use the isolated_env fixture (it redirects every root)."
+        )
+    yield
 
 
 @pytest.fixture

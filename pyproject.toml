@@ -21,7 +21,7 @@ classifiers = [
   "Topic :: System :: Software Distribution",
   "Topic :: System :: Systems Administration",
 ]
-dependencies = ["PyYAML>=6.0", "prompt_toolkit>=3.0"]
+dependencies = ["PyYAML>=6.0", "prompt_toolkit>=3.0", "textual>=0.80"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "build>=1.0"]

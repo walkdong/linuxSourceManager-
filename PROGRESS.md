@@ -139,6 +139,17 @@ Key design decisions (do not undo these casually):
 13. History timestamps had second resolution, so rapid changes compared equal and
     `rollback` could pick the wrong entry.
 
+### ⚠️ 一次真实事故（已修复，并加了防线）
+
+手动调试脚本忘了设置 `HOME`，于是 `srcmgr --cli -y npm add …` 写进了**真机**的
+`~/.npmrc`（把 npm registry 改成 npmmirror）。测试套件本身没碰真 HOME（已用指纹对比证明），
+是调试脚本的问题。处理：删掉 `~/.npmrc` 恢复默认，并在 `tests/conftest.py` 加了 autouse
+守卫 `_refuse_real_home`——只要 `SRCMGR_CONFIG_HOME/DATA_HOME/CACHE_HOME` 解析到真 HOME
+里面，测试立刻失败（已验证该守卫会真的拦住）。
+
+**结论（写进规则）**：任何手动验证脚本都必须先设 `HOME`/`SRCMGR_*` 到临时目录，
+绝不能依赖"反正只是读"。
+
 ### M5 bugs found and fixed (regression-tested)
 
 20. APT 换源后界面仍显示"当前：官方源"——插件自身的优先级看不到用户意图；现在
