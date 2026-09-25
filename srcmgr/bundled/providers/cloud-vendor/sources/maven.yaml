@@ -1,0 +1,15 @@
+managers: [maven]
+sources:
+  - key: maven-central
+    name: Maven Central
+    kind: official
+    url: https://repo.maven.apache.org/maven2
+    scope: user
+    description: >-
+      Maven Central (Sonatype) via the Apache mirror host; the repository every mirror
+      in this registry copies.
+    homepage: https://central.sonatype.com/
+    extra:
+      mirror_of: central
+    health:
+      url: https://repo.maven.apache.org/maven2/org/apache/maven/maven-core/maven-metadata.xml

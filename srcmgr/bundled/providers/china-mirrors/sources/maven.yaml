@@ -1,0 +1,46 @@
+# Maven repository mirrors in mainland China.
+# Health URLs fetch maven-metadata.xml for org.apache.maven:maven-core, which proves
+# the repository really serves Maven metadata and not just an empty directory.
+managers: [maven]
+sources:
+  - key: aliyun
+    name: Aliyun public repository
+    kind: mirror
+    url: https://maven.aliyun.com/repository/public
+    scope: user
+    priority: 20
+    description: >-
+      Alibaba Cloud's public Maven repository (central + jcenter aggregate); the
+      standard China mirror for Maven and Gradle.
+    homepage: https://developer.aliyun.com/mirror/maven
+    extra:
+      countries: [cn]
+      mirror_of: "*"
+    health:
+      url: https://maven.aliyun.com/repository/public/org/apache/maven/maven-core/maven-metadata.xml
+
+  - key: tencent
+    name: Tencent Cloud Maven
+    kind: mirror
+    url: https://mirrors.cloud.tencent.com/nexus/repository/maven-public/
+    scope: user
+    description: Tencent Cloud Maven public repository mirror.
+    homepage: https://mirrors.cloud.tencent.com/
+    extra:
+      countries: [cn]
+      mirror_of: "*"
+    health:
+      url: https://mirrors.cloud.tencent.com/nexus/repository/maven-public/org/apache/maven/maven-core/maven-metadata.xml
+
+  - key: huawei
+    name: Huawei Cloud Maven
+    kind: mirror
+    url: https://repo.huaweicloud.com/repository/maven/
+    scope: user
+    description: Huawei Cloud Maven repository mirror.
+    homepage: https://repo.huaweicloud.com/repository/maven/
+    extra:
+      countries: [cn]
+      mirror_of: "*"
+    health:
+      url: https://repo.huaweicloud.com/repository/maven/org/apache/maven/maven-core/maven-metadata.xml

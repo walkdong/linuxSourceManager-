@@ -1,0 +1,16 @@
+# conda-forge on Anaconda's own CDN.  The `defaults` channel (repo.anaconda.com) is
+# intentionally not shipped: its terms of service restrict commercial use, so the
+# registry stays with the community-maintained conda-forge channel.
+managers: [conda]
+sources:
+  - key: conda-forge
+    name: conda-forge (upstream)
+    kind: official
+    url: https://conda.anaconda.org/conda-forge
+    scope: user
+    description: >-
+      The community conda-forge channel on Anaconda's CDN - the recommended default
+      channel for conda and mamba.
+    homepage: https://conda-forge.org/
+    health:
+      url: https://conda.anaconda.org/conda-forge/noarch/repodata.json

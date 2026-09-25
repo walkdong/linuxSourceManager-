@@ -1,0 +1,205 @@
+# Conda channels in mainland China.  Each entry is the full channel URL that conda
+# accepts directly in ~/.condarc `channels:`; the health URL reads that channel's
+# noarch/repodata.json, i.e. the file conda itself fetches.
+#
+# Verification notes:
+#   * Aliyun has no anaconda mirror: mirrors.aliyun.com/anaconda/**/noarch/repodata.json
+#     answers 404, so it is not shipped despite being a common recommendation.
+#   * USTC and BFSU now 302-redirect their anaconda trees to NJU and TUNA
+#     respectively, so they are not listed as independent mirrors.
+#   * TUNA, NJU, SJTU, ZJU, SUSTech and PKU all serve the channels below directly.
+managers: [conda]
+sources:
+  - key: tuna-main
+    name: TUNA main
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+    scope: user
+    priority: 20
+    description: Tsinghua TUNA mirror of the Anaconda `main` channel (defaults).
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/noarch/repodata.json
+
+  - key: tuna-conda-forge
+    name: TUNA conda-forge
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge
+    scope: user
+    priority: 20
+    description: Tsinghua TUNA mirror of the conda-forge channel.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/noarch/repodata.json
+
+  - key: tuna-r
+    name: TUNA R channel
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r
+    scope: user
+    description: Tsinghua TUNA mirror of the Anaconda `r` channel.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r/noarch/repodata.json
+
+  - key: tuna-msys2
+    name: TUNA msys2 channel
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2
+    scope: user
+    description: Tsinghua TUNA mirror of the msys2 channel (Windows toolchains).
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2/noarch/repodata.json
+
+  - key: tuna-pytorch
+    name: TUNA pytorch channel
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch
+    scope: user
+    description: Tsinghua TUNA mirror of the pytorch channel.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/noarch/repodata.json
+
+  - key: tuna-bioconda
+    name: TUNA bioconda channel
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda
+    scope: user
+    description: Tsinghua TUNA mirror of the bioconda channel.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/anaconda/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/noarch/repodata.json
+
+  - key: nju-main
+    name: NJU main
+    kind: mirror
+    url: https://mirrors.nju.edu.cn/anaconda/pkgs/main
+    scope: user
+    description: Nanjing University mirror of the Anaconda `main` channel.
+    homepage: https://mirrors.nju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.nju.edu.cn/anaconda/pkgs/main/noarch/repodata.json
+
+  - key: nju-conda-forge
+    name: NJU conda-forge
+    kind: mirror
+    url: https://mirrors.nju.edu.cn/anaconda/cloud/conda-forge
+    scope: user
+    description: Nanjing University mirror of the conda-forge channel.
+    homepage: https://mirrors.nju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.nju.edu.cn/anaconda/cloud/conda-forge/noarch/repodata.json
+
+  - key: sjtu-main
+    name: SJTU main
+    kind: mirror
+    url: https://mirror.sjtu.edu.cn/anaconda/pkgs/main
+    scope: user
+    description: SJTU mirror of the Anaconda `main` channel.
+    homepage: https://mirror.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirror.sjtu.edu.cn/anaconda/pkgs/main/noarch/repodata.json
+
+  - key: sjtu-conda-forge
+    name: SJTU conda-forge
+    kind: mirror
+    url: https://mirror.sjtu.edu.cn/anaconda/cloud/conda-forge
+    scope: user
+    description: SJTU mirror of the conda-forge channel.
+    homepage: https://mirror.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirror.sjtu.edu.cn/anaconda/cloud/conda-forge/noarch/repodata.json
+
+  - key: zju-main
+    name: ZJU main
+    kind: mirror
+    url: https://mirrors.zju.edu.cn/anaconda/pkgs/main
+    scope: user
+    description: Zhejiang University mirror of the Anaconda `main` channel.
+    homepage: https://mirrors.zju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.zju.edu.cn/anaconda/pkgs/main/noarch/repodata.json
+
+  - key: zju-conda-forge
+    name: ZJU conda-forge
+    kind: mirror
+    url: https://mirrors.zju.edu.cn/anaconda/cloud/conda-forge
+    scope: user
+    description: Zhejiang University mirror of the conda-forge channel.
+    homepage: https://mirrors.zju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.zju.edu.cn/anaconda/cloud/conda-forge/noarch/repodata.json
+
+  - key: sustech-main
+    name: SUSTech main
+    kind: mirror
+    url: https://mirrors.sustech.edu.cn/anaconda/pkgs/main
+    scope: user
+    description: SUSTech mirror of the Anaconda `main` channel.
+    homepage: https://mirrors.sustech.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.sustech.edu.cn/anaconda/pkgs/main/noarch/repodata.json
+
+  - key: sustech-conda-forge
+    name: SUSTech conda-forge
+    kind: mirror
+    url: https://mirrors.sustech.edu.cn/anaconda/cloud/conda-forge
+    scope: user
+    description: SUSTech mirror of the conda-forge channel.
+    homepage: https://mirrors.sustech.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.sustech.edu.cn/anaconda/cloud/conda-forge/noarch/repodata.json
+
+  - key: pku-main
+    name: PKU main
+    kind: mirror
+    url: https://mirrors.pku.edu.cn/anaconda/pkgs/main
+    scope: user
+    description: Peking University mirror of the Anaconda `main` channel.
+    homepage: https://mirrors.pku.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.pku.edu.cn/anaconda/pkgs/main/noarch/repodata.json
+
+  - key: pku-conda-forge
+    name: PKU conda-forge
+    kind: mirror
+    url: https://mirrors.pku.edu.cn/anaconda/cloud/conda-forge
+    scope: user
+    description: Peking University mirror of the conda-forge channel.
+    homepage: https://mirrors.pku.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.pku.edu.cn/anaconda/cloud/conda-forge/noarch/repodata.json

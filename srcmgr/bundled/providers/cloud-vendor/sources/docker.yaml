@@ -1,0 +1,21 @@
+# Docker Hub itself.
+#
+# /v2/ answers 401 with `WWW-Authenticate: Bearer realm="https://auth.docker.io/token"`
+# and an anonymous pull of library/alpine:latest succeeds, which is exactly what the
+# accelerators in china-mirrors are tested against.  Docker already uses this registry
+# implicitly, so adding it to registry-mirrors is only useful as an explicit
+# known-good fallback and as a probe target; `srcmgr docker test` reports the 401 as a
+# weak "reachable" pass, not as a failure.
+managers: [docker]
+sources:
+  - key: registry-1
+    name: Docker Hub (registry-1.docker.io)
+    kind: official
+    url: https://registry-1.docker.io
+    scope: system
+    description: >-
+      Docker Hub upstream registry.  Implicit default for every Docker install; listed
+      here so it can be compared against the accelerators.
+    homepage: https://hub.docker.com/
+    health:
+      url: https://registry-1.docker.io/v2/

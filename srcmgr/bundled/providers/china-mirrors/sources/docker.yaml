@@ -1,0 +1,90 @@
+# Docker Hub registry accelerators (registry-mirrors in /etc/docker/daemon.json).
+#
+# Verification policy for this file: an accelerator is only listed when
+#   * https://<host>/v2/ answers with `Docker-Distribution-Api-Version: registry/2.0`,
+#   * and an anonymous pull of library/alpine:latest succeeds (token + manifest 200).
+# A 401 on /v2/ is the normal registry answer ("authenticate first") and is reported
+# as a weak "reachable" pass by `srcmgr docker test`, not as a failure.
+#
+# Verified dead and therefore not listed: docker.mirrors.tuna.tsinghua.edu.cn,
+# docker.mirrors.ustc.edu.cn, hub-mirror.c.163.com (TLS/connection refused),
+# docker.1panel.live and docker.nju.edu.cn (403), dockerpull.org (404),
+# dockerproxy.net (/v2/ 200 but manifest 404), docker.1panel.top (429).
+# The Aliyun accelerator (https://<id>.mirror.aliyuncs.com) is account-specific and
+# cannot be verified or shipped; the Tencent Cloud one (mirror.ccs.tencentyun.com)
+# only resolves inside Tencent Cloud VPCs.
+managers: [docker]
+sources:
+  - key: daocloud
+    name: DaoCloud (docker.m.daocloud.io)
+    kind: mirror
+    url: https://docker.m.daocloud.io
+    scope: system
+    description: >-
+      DaoCloud public Docker Hub accelerator.  Verified: /v2/ answers 401 with a
+      valid bearer token realm and an anonymous pull of library/alpine:latest
+      returns 200.
+    homepage: https://m.daocloud.io/
+    extra:
+      countries: [cn]
+    health:
+      url: https://docker.m.daocloud.io/v2/
+
+  - key: 1ms
+    name: 1ms.run
+    kind: mirror
+    url: https://docker.1ms.run
+    scope: system
+    description: >-
+      1ms.run (Haomiao) Docker Hub accelerator.  Verified: /v2/ answers 401 with a
+      valid bearer token realm and an anonymous pull of library/alpine:latest
+      returns 200.
+    homepage: https://1ms.run/
+    extra:
+      countries: [cn]
+    health:
+      url: https://docker.1ms.run/v2/
+
+  - key: 1panel
+    name: 1Panel (hub.1panel.dev)
+    kind: mirror
+    url: https://hub.1panel.dev
+    scope: system
+    description: >-
+      1Panel's Docker Hub accelerator.  Verified: /v2/ answers 200 with
+      Docker-Distribution-Api-Version registry/2.0 and an anonymous
+      library/alpine:latest manifest pull returns 200.
+    homepage: https://1panel.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://hub.1panel.dev/v2/
+
+  - key: dockerproxy
+    name: dockerproxy.com
+    kind: mirror
+    url: https://dockerproxy.com
+    scope: system
+    description: >-
+      Public Docker Hub proxy-cache.  Verified: /v2/ answers 200 and an anonymous
+      library/alpine:latest manifest pull returns 200.  Third-party service without
+      an SLA - keep another accelerator configured as well.
+    homepage: https://dockerproxy.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://dockerproxy.com/v2/
+
+  - key: xuanyuan
+    name: Xuanyuan (docker.xuanyuan.me)
+    kind: mirror
+    url: https://docker.xuanyuan.me
+    scope: system
+    description: >-
+      Xuanyuan Docker Hub accelerator.  Verified: /v2/ answers 401 with a valid
+      bearer token realm and an anonymous pull of library/alpine:latest returns 200.
+    homepage: https://docker.xuanyuan.me/
+    extra:
+      countries: [cn]
+    health:
+      url: https://docker.xuanyuan.me/v2/

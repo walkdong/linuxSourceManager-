@@ -1,0 +1,18 @@
+# EXAMPLE ENTRY - an internal Python index (devpi, Nexus, Artifactory, Pulp).
+# pip needs a PEP 503 index; the URL becomes index-url.  Add
+# `extra: {key: extra-index-url}` if your organisation wants the internal index as a
+# secondary rather than the primary index.
+managers: [pip]
+sources:
+  - key: devpi
+    name: Internal PyPI index (example)
+    kind: private
+    url: https://pypi.example.invalid/simple
+    scope: user
+    description: >-
+      EXAMPLE: an internal pip index such as devpi or a Nexus PyPI proxy.  Credentials
+      belong in ~/.pip/pip.conf or a keyring, never in the provider.
+    homepage: https://pypi.example.invalid/
+    health:
+      url: https://pypi.example.invalid/simple/
+      allow_missing: true

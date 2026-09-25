@@ -1,0 +1,13 @@
+managers: [go]
+sources:
+  - key: goproxy
+    name: proxy.golang.org (upstream)
+    kind: official
+    url: https://proxy.golang.org
+    scope: user
+    description: >-
+      The Go team's module proxy.  It cannot serve modules from behind the Great
+      Firewall, which is why the China mirrors exist.
+    homepage: https://proxy.golang.org/
+    health:
+      url: https://proxy.golang.org/github.com/pkg/errors/@v/list

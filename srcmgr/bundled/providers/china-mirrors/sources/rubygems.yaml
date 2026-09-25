@@ -1,0 +1,47 @@
+# RubyGems mirrors in mainland China.
+#
+# gems.ruby-china.com is deliberately NOT listed: as of this verification its TLS
+# certificate is served by a Tencent CDN wildcard (CN=*.cdn.myqcloud.com) that does not
+# cover the host name, so every HTTPS request fails certificate verification
+# (curl: "no alternative certificate subject name matches target hostname"), and plain
+# HTTP answers 418.  `gem sources` would fail the same way.  Use the mirrors below.
+managers: [rubygems]
+sources:
+  - key: tuna
+    name: TUNA (Tsinghua)
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/rubygems/
+    scope: user
+    priority: 20
+    description: >-
+      Tsinghua TUNA RubyGems mirror.  Health URL fetches specs.4.8.gz, the index
+      `gem sources` reads.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/rubygems/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/rubygems/specs.4.8.gz
+
+  - key: ustc
+    name: USTC (Hefei)
+    kind: mirror
+    url: https://mirrors.ustc.edu.cn/rubygems/
+    scope: user
+    description: USTC RubyGems mirror.
+    homepage: https://mirrors.ustc.edu.cn/help/rubygems.html
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.ustc.edu.cn/rubygems/specs.4.8.gz
+
+  - key: aliyun
+    name: Aliyun (Alibaba Cloud)
+    kind: mirror
+    url: https://mirrors.aliyun.com/rubygems/
+    scope: user
+    description: Alibaba Cloud RubyGems mirror.
+    homepage: https://developer.aliyun.com/mirror/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.aliyun.com/rubygems/specs.4.8.gz

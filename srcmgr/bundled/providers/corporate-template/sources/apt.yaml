@@ -1,0 +1,29 @@
+# EXAMPLE ENTRY - replace the host, path and key with your own Nexus/Artifactory APT
+# proxy.  Everything under .invalid is guaranteed not to resolve (RFC 2606/6761).
+#
+# `health.allow_missing: true` marks the entry as an internal endpoint that is expected
+# to be unreachable from the public internet: it disables the "fall back to a native
+# ecosystem check" behaviour during health runs, so an internal-only repo is not
+# silently reported healthy just because `apt update` happens to work.
+#
+# Optional APT extras you may add once you know your keyring:
+#   extra:
+#     signed_by: /usr/share/keyrings/acme-internal.gpg   # or "true" to derive a path
+managers: [apt]
+sources:
+  - key: nexus-apt
+    name: Nexus APT proxy (example)
+    kind: private
+    url: https://nexus.example.invalid/repository/debian/
+    suite: ${codename}
+    components: [main]
+    types: [deb]
+    scope: system
+    description: >-
+      EXAMPLE: an internal Nexus/Artifactory Debian proxy.  Replace the host, set your
+      own components and (if you sign your repo) extra.signed_by.  System scope because
+      APT sources live in /etc/apt.
+    homepage: https://nexus.example.invalid/
+    health:
+      url: https://nexus.example.invalid/repository/debian/dists/stable/Release
+      allow_missing: true

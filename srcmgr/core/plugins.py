@@ -275,12 +275,31 @@ def source_from_dict(data: Mapping[str, Any], *, manager: str, provider: str) ->
         description=str(data.get("description") or ""),
         homepage=str(data.get("homepage") or ""),
         health=health,
-        extra=dict(data.get("extra") or {}),
+        extra=_collect_extra(data),
         secret_fields=[str(f) for f in (data.get("secret_fields") or [])],
     )
     if not source.url and not source.extra.get("url_template"):
         raise ManifestError(f"{provider}/{key}: source needs a 'url'")
     return source
+
+
+#: Entry keys handled explicitly by :func:`source_from_dict`; every *other* key is passed
+#: through to ``Source.extra`` so provider authors can use plain top-level fields
+#: (``url_template:``, ``countries:``, ``remote_name:`` …) exactly as documented.
+KNOWN_ENTRY_KEYS = {
+    "key", "name", "url", "baseurl", "kind", "scope", "suite", "channel", "components",
+    "types", "architectures", "enabled", "priority", "description", "homepage", "health",
+    "health_url", "extra", "secret_fields",
+}
+
+
+def _collect_extra(data: Mapping[str, Any]) -> dict[str, Any]:
+    extra = dict(data.get("extra") or {})
+    for field, value in data.items():
+        if field in KNOWN_ENTRY_KEYS:
+            continue
+        extra.setdefault(str(field), value)
+    return extra
 
 
 class DataProviderLoader:

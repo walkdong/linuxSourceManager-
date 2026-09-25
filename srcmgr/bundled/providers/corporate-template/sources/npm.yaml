@@ -1,0 +1,20 @@
+# EXAMPLE ENTRY - an internal npm registry (Verdaccio, Nexus, Artifactory, GitHub
+# Packages, ...).  One URL serves npm, yarn and pnpm; the managers write it as the
+# registry value.  Hosts under .invalid never resolve, and health.allow_missing marks
+# them as intentionally offline from the public internet.
+managers: [npm, yarn, pnpm]
+sources:
+  - key: verdaccio
+    name: Internal npm registry (example)
+    kind: private
+    url: https://npm.example.invalid/
+    scope: user
+    description: >-
+      EXAMPLE: an internal npm registry, e.g. Verdaccio or a Nexus npm group.  If the
+      registry needs a token, do not put it in the provider - keep credentials in
+      ~/.npmrc and let the manager preserve them (extra.accompanying on a source is
+      how the npm plugin carries sibling keys such as always-auth).
+    homepage: https://npm.example.invalid/
+    health:
+      url: https://npm.example.invalid/
+      allow_missing: true

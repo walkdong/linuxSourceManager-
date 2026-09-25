@@ -1,0 +1,13 @@
+managers: [pip]
+sources:
+  - key: pypi
+    name: PyPI (upstream)
+    kind: official
+    url: https://pypi.org/simple
+    scope: user
+    description: >-
+      The canonical Python Package Index.  pip's built-in default, listed so it can be
+      selected and probed like any other source.
+    homepage: https://pypi.org/
+    health:
+      url: https://pypi.org/simple/pip/

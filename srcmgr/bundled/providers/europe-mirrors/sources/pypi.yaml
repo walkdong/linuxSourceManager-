@@ -1,0 +1,16 @@
+# PyPI mirrors outside China.  Only xTom publishes a verified PEP 503 index; the
+# German/Danish/US university mirrors that used to carry /pypi/web/simple (FAU,
+# netcologne, dotsrc, OCF, Princeton, AARNet) all answer 404 for it today, so they are
+# not listed.  pypi.org itself lives in the cloud-vendor provider.
+managers: [pip]
+sources:
+  - key: xtom
+    name: xTom PyPI (DE)
+    kind: mirror
+    url: https://mirrors.xtom.de/pypi/web/simple
+    scope: user
+    description: >-
+      xTom GmbH PyPI mirror in Düsseldorf (PEP 503 index at /pypi/web/simple).
+    homepage: https://mirrors.xtom.de/
+    health:
+      url: https://mirrors.xtom.de/pypi/web/simple/pip/

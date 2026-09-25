@@ -1,0 +1,217 @@
+# Non-China APT mirrors.
+#
+# deb.debian.org is NOT repeated here: it is shipped once, as an official entry, by
+# the debian-official provider, and duplicating the same URL under a second key would
+# only make `srcmgr apt available` list the same archive twice.
+#
+# Hosts whose layout is /debian/ and /ubuntu/ get a ${distro} template so one entry
+# covers both families; hosts that only mirror one family use a static URL.
+# Debian security is a separate archive, so <host>/debian-security entries exist only
+# where the host really mirrors it (verified; leaseweb, fau, kernel, princeton, mtu,
+# funet and aarnet do not).
+managers: [apt]
+sources:
+  - key: ftp-debian
+    name: Debian (ftp.debian.org)
+    kind: official
+    url: https://ftp.debian.org/debian/
+    suite: ${codename}
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: >-
+      Debian's own ftp.debian.org service: a redirector that hands the client to a
+      nearby Debian mirror.  Official provenance, but the final host varies.
+    homepage: https://www.debian.org/mirror/list
+    health:
+      url: https://ftp.debian.org/debian/dists/stable/Release
+
+  - key: ftp-debian-updates
+    name: Debian updates (ftp.debian.org)
+    kind: official
+    url: https://ftp.debian.org/debian/
+    suite: ${codename}-updates
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: Debian <codename>-updates through the ftp.debian.org redirector.
+    homepage: https://www.debian.org/mirror/list
+    health:
+      url: https://ftp.debian.org/debian/dists/stable-updates/Release
+
+  - key: leaseweb
+    name: LeaseWeb (NL)
+    kind: mirror
+    url_template: https://mirror.nl.leaseweb.net/${distro}/
+    url: https://mirror.nl.leaseweb.net/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      LeaseWeb Netherlands: Debian and Ubuntu archives on a commercial European
+      network, good fallback for EU hosts.
+    homepage: https://mirror.nl.leaseweb.net/
+    health:
+      urls:
+        - https://mirror.nl.leaseweb.net/debian/dists/stable/Release
+        - https://mirror.nl.leaseweb.net/ubuntu/dists/noble/Release
+
+  - key: fau
+    name: FAU Erlangen-Nürnberg (DE)
+    kind: mirror
+    url_template: https://ftp.fau.de/${distro}/
+    url: https://ftp.fau.de/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      Friedrich-Alexander-Universität Erlangen-Nürnberg: one of the largest German
+      university mirrors, carries Debian and Ubuntu.
+    homepage: https://ftp.fau.de/
+    health:
+      urls:
+        - https://ftp.fau.de/debian/dists/stable/Release
+        - https://ftp.fau.de/ubuntu/dists/noble/Release
+
+  - key: kernel
+    name: kernel.org
+    kind: mirror
+    url_template: https://mirrors.kernel.org/${distro}/
+    url: https://mirrors.kernel.org/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      mirrors.kernel.org (Linux Kernel Archives / ISC): Debian and Ubuntu archives
+      on a high-bandwidth global network.
+    homepage: https://mirrors.kernel.org/
+    health:
+      urls:
+        - https://mirrors.kernel.org/debian/dists/stable/Release
+        - https://mirrors.kernel.org/ubuntu/dists/noble/Release
+
+  - key: rackspace
+    name: Rackspace
+    kind: mirror
+    url_template: https://mirror.rackspace.com/${distro}/
+    url: https://mirror.rackspace.com/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      Rackspace public mirror: Debian (including the security archive) and Ubuntu.
+    homepage: https://mirror.rackspace.com/
+    health:
+      urls:
+        - https://mirror.rackspace.com/debian/dists/stable/Release
+        - https://mirror.rackspace.com/ubuntu/dists/noble/Release
+
+  - key: rackspace-debian-security
+    name: Rackspace Debian security
+    kind: mirror
+    url: https://mirror.rackspace.com/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: Rackspace mirror of the Debian security archive.
+    homepage: https://mirror.rackspace.com/
+    health:
+      url: https://mirror.rackspace.com/debian-security/dists/stable-security/Release
+
+  - key: netcologne
+    name: NetCologne (DE)
+    kind: mirror
+    url_template: https://mirror.netcologne.de/${distro}/
+    url: https://mirror.netcologne.de/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      NetCologne (German ISP) mirror: Debian, Debian security and Ubuntu.
+    homepage: https://mirror.netcologne.de/
+    health:
+      urls:
+        - https://mirror.netcologne.de/debian/dists/stable/Release
+        - https://mirror.netcologne.de/ubuntu/dists/noble/Release
+
+  - key: netcologne-debian-security
+    name: NetCologne Debian security
+    kind: mirror
+    url: https://mirror.netcologne.de/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: NetCologne mirror of the Debian security archive.
+    homepage: https://mirror.netcologne.de/
+    health:
+      url: https://mirror.netcologne.de/debian-security/dists/stable-security/Release
+
+  - key: dotsrc
+    name: dotsrc.org (DK)
+    kind: mirror
+    url_template: https://mirrors.dotsrc.org/${distro}/
+    url: https://mirrors.dotsrc.org/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      dotsrc.org (Aalborg University / Danish community mirror): Debian, Debian
+      security, Ubuntu and Ubuntu ports.
+    homepage: https://mirrors.dotsrc.org/
+    health:
+      urls:
+        - https://mirrors.dotsrc.org/debian/dists/stable/Release
+        - https://mirrors.dotsrc.org/ubuntu/dists/noble/Release
+
+  - key: dotsrc-debian-security
+    name: dotsrc Debian security
+    kind: mirror
+    url: https://mirrors.dotsrc.org/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: dotsrc.org mirror of the Debian security archive.
+    homepage: https://mirrors.dotsrc.org/
+    health:
+      url: https://mirrors.dotsrc.org/debian-security/dists/stable-security/Release
+
+  - key: funet
+    name: Funet (FI)
+    kind: mirror
+    url: https://www.nic.funet.fi/pub/linux/mirrors/debian/
+    suite: ${codename}
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: >-
+      FUNET / CSC (Finland) Debian mirror.  Debian only, and its path layout does not
+      follow the /debian/ + /ubuntu/ convention, so it uses a static URL.
+    homepage: https://www.nic.funet.fi/
+    health:
+      url: https://www.nic.funet.fi/pub/linux/mirrors/debian/dists/stable/Release
+
+  - key: xtom
+    name: xTom (DE)
+    kind: mirror
+    url_template: https://mirrors.xtom.de/${distro}/
+    url: https://mirrors.xtom.de/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      xTom GmbH mirror in Düsseldorf: Debian, Debian security and Ubuntu; also
+      mirrors PyPI (see the pypi.yaml file of this provider).
+    homepage: https://mirrors.xtom.de/
+    health:
+      urls:
+        - https://mirrors.xtom.de/debian/dists/stable/Release
+        - https://mirrors.xtom.de/ubuntu/dists/noble/Release
+
+  - key: xtom-debian-security
+    name: xTom Debian security
+    kind: mirror
+    url: https://mirrors.xtom.de/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: xTom mirror of the Debian security archive.
+    homepage: https://mirrors.xtom.de/
+    health:
+      url: https://mirrors.xtom.de/debian-security/dists/stable-security/Release

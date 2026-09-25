@@ -1,0 +1,14 @@
+name: corporate-template
+display_name: Corporate template (example)
+type: provider
+version: 0.1.0
+description: >-
+  EXAMPLE / documentation-as-data: copy this provider to publish an organisation's
+  internal Nexus, Artifactory, Verdaccio, devpi or Harbor endpoints.  All hosts are
+  under the reserved .invalid TLD, so nothing here resolves and nothing here should be
+  installed as-is.
+author: Source Manager contributors
+license: MIT
+homepage: https://example.invalid/source-manager/provider-template
+managers: [apt, npm, yarn, pnpm, pip, cargo, docker, conda]
+sources_dir: sources

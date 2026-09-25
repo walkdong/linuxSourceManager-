@@ -1,0 +1,17 @@
+# EXAMPLE ENTRY - an internal conda channel mirror.  The URL is written verbatim into
+# the `channels:` list of ~/.condarc, so it must be the full channel URL.
+managers: [conda]
+sources:
+  - key: nexus-conda
+    name: Internal conda channel (example)
+    kind: private
+    url: https://conda.example.invalid/conda-forge
+    scope: user
+    description: >-
+      EXAMPLE: an internal conda-forge mirror.  Set extra.channel if the channel name
+      differs from the URL, and extra.priority: highest to prepend it to the channel
+      list.
+    homepage: https://conda.example.invalid/
+    health:
+      url: https://conda.example.invalid/conda-forge/noarch/repodata.json
+      allow_missing: true

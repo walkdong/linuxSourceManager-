@@ -1,0 +1,28 @@
+# Flatpak remotes in mainland China.
+#
+# USTC's flathub endpoint is the only Chinese flathub mirror verified to answer;
+# TUNA, SJTU, BFSU and NJU return 404 for /flathub (SJTU only republishes the upstream
+# .flatpakrepo descriptor, whose Url= still points at dl.flathub.org, so it is useless
+# as a mirror and is not shipped).
+#
+# USTC documents this endpoint as a *cache*: metadata is synced hourly and object
+# requests that miss the cache are 302-redirected to dl.flathub.org, so basic
+# connectivity to Flathub is still required.
+managers: [flatpak]
+sources:
+  - key: ustc-flathub
+    name: USTC Flathub cache
+    kind: mirror
+    url: https://mirrors.ustc.edu.cn/flathub
+    scope: system
+    description: >-
+      USTC's Flathub cache (metadata synced hourly, blob requests fall back to
+      dl.flathub.org).  Add it as an extra remote with
+      `srcmgr flatpak add ustc-flathub`, or point the existing flathub remote at it
+      with `sudo flatpak remote-modify flathub --url=https://mirrors.ustc.edu.cn/flathub`.
+    homepage: https://mirrors.ustc.edu.cn/help/flathub.html
+    extra:
+      countries: [cn]
+      installation: system
+    health:
+      url: https://mirrors.ustc.edu.cn/flathub/config

@@ -1,0 +1,17 @@
+# EXAMPLE ENTRY - an internal Cargo registry.  Cargo needs the `sparse+` prefix for a
+# sparse index; the health URL drops it because it is a plain HTTP(S) probe.
+managers: [cargo]
+sources:
+  - key: nexus-cargo
+    name: Internal Cargo registry (example)
+    kind: private
+    url: sparse+https://cargo.example.invalid/index/
+    scope: user
+    description: >-
+      EXAMPLE: an internal crates.io replacement (Nexus, Artifactory or a private
+      sparse index).  When this entry is added, the cargo manager writes it as
+      [source.<key>] registry = ... plus a [source.crates-io] replace-with rule.
+    homepage: https://cargo.example.invalid/
+    health:
+      url: https://cargo.example.invalid/index/config.json
+      allow_missing: true

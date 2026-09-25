@@ -1,0 +1,14 @@
+# crates.io sparse index (the upstream the China mirrors copy).
+managers: [cargo]
+sources:
+  - key: crates-io
+    name: crates.io (upstream)
+    kind: official
+    url: sparse+https://index.crates.io/
+    scope: user
+    description: >-
+      The canonical crates.io sparse registry.  Cargo's built-in default, listed so it
+      can be selected after switching to a mirror.
+    homepage: https://crates.io/
+    health:
+      url: https://index.crates.io/config.json

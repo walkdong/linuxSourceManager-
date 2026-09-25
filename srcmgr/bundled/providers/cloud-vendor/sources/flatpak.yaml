@@ -1,0 +1,18 @@
+# Flathub, the upstream Flatpak repository.  remote-add accepts the .flatpakrepo
+# descriptor URL directly (this is Flathub's own documented command).
+managers: [flatpak]
+sources:
+  - key: flathub
+    name: Flathub
+    kind: official
+    url: https://flathub.org/repo/flathub.flatpakrepo
+    scope: system
+    description: >-
+      Official Flathub repository descriptor.  Adding it creates the canonical
+      `flathub` remote; if that remote already exists the manager's --if-not-exists
+      leaves it untouched.
+    homepage: https://flathub.org/
+    extra:
+      installation: system
+    health:
+      url: https://flathub.org/repo/flathub.flatpakrepo

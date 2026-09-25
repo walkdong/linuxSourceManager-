@@ -1,0 +1,20 @@
+# EXAMPLE ENTRY - an internal Docker Hub proxy cache (Harbor, Nexus, Artifactory).
+#
+# The docker manager only manages the `registry-mirrors` list, so the endpoint must be
+# a Docker Hub *proxy cache*, not an ordinary private registry: Docker asks a mirror for
+# manifests it would otherwise fetch from Docker Hub.  A plain Harbor project that only
+# hosts your own images is not a mirror and should not be added here.
+managers: [docker]
+sources:
+  - key: harbor-proxy
+    name: Internal Docker Hub proxy cache (example)
+    kind: private
+    url: https://harbor.example.invalid
+    scope: system
+    description: >-
+      EXAMPLE: a self-hosted Harbor proxy-cache project.  The URL must be the registry
+      origin (scheme + host, optionally a path) that answers /v2/.
+    homepage: https://harbor.example.invalid/
+    health:
+      url: https://harbor.example.invalid/v2/
+      allow_missing: true

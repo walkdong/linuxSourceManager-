@@ -1,0 +1,70 @@
+# Git URL-rewrite mirrors (url.<base>.insteadOf https://github.com/).
+#
+# Each entry sets extra.instead_of so `git clone https://github.com/owner/repo` is
+# transparently rewritten to the mirror.  All four proxies were verified to speak Git
+# smart HTTP: GET <base><owner>/<repo>.git/info/refs?service=git-upload-pack returns
+# 200 with content-type application/x-git-upload-pack-advertisement.
+#
+# These are third-party proxies: the operator can see every request, so use them for
+# public repositories and keep the official GitHub URL for anything private.
+managers: [git]
+sources:
+  - key: gitclone
+    name: gitclone.com
+    kind: mirror
+    url: https://gitclone.com/github.com/
+    scope: user
+    description: >-
+      gitclone.com cache: rewrites github.com to https://gitclone.com/github.com/.
+      Smart-HTTP clone verified.
+    homepage: https://gitclone.com/
+    extra:
+      countries: [cn]
+      instead_of: ["https://github.com/"]
+    health:
+      url: https://gitclone.com/
+
+  - key: ghproxy-net
+    name: ghproxy.net
+    kind: mirror
+    url: https://ghproxy.net/https://github.com/
+    scope: user
+    description: >-
+      ghproxy.net GitHub proxy: rewrites github.com to
+      https://ghproxy.net/https://github.com/.  Smart-HTTP clone verified.
+    homepage: https://ghproxy.net/
+    extra:
+      countries: [cn]
+      instead_of: ["https://github.com/"]
+    health:
+      url: https://ghproxy.net/
+
+  - key: gh-proxy
+    name: gh-proxy.com
+    kind: mirror
+    url: https://gh-proxy.com/https://github.com/
+    scope: user
+    description: >-
+      gh-proxy.com GitHub proxy: rewrites github.com to
+      https://gh-proxy.com/https://github.com/.  Smart-HTTP clone verified.
+    homepage: https://gh-proxy.com/
+    extra:
+      countries: [cn]
+      instead_of: ["https://github.com/"]
+    health:
+      url: https://gh-proxy.com/
+
+  - key: ghfast
+    name: ghfast.top
+    kind: mirror
+    url: https://ghfast.top/https://github.com/
+    scope: user
+    description: >-
+      ghfast.top GitHub proxy: rewrites github.com to
+      https://ghfast.top/https://github.com/.  Smart-HTTP clone verified.
+    homepage: https://ghfast.top/
+    extra:
+      countries: [cn]
+      instead_of: ["https://github.com/"]
+    health:
+      url: https://ghfast.top/

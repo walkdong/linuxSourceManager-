@@ -1,0 +1,13 @@
+managers: [rubygems]
+sources:
+  - key: rubygems
+    name: RubyGems.org (upstream)
+    kind: official
+    url: https://rubygems.org
+    scope: user
+    description: >-
+      The canonical RubyGems source.  The health URL reads specs.4.8.gz, the index
+      `gem sources` fetches.
+    homepage: https://rubygems.org/
+    health:
+      url: https://rubygems.org/specs.4.8.gz

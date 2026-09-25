@@ -1,0 +1,14 @@
+# The upstream npm registry, shared by the npm, yarn and pnpm managers.
+managers: [npm, yarn, pnpm]
+sources:
+  - key: npmjs
+    name: npmjs (upstream)
+    kind: official
+    url: https://registry.npmjs.org
+    scope: user
+    description: >-
+      The canonical npm registry.  Every mirror in the other providers is a copy of
+      this one; use it when local mirrors are stale or blocked.
+    homepage: https://www.npmjs.com/
+    health:
+      url: https://registry.npmjs.org/npm
