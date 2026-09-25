@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=源管理器
+Name[en]=Source Manager
+GenericName=软件下载源管理
+Comment=把各种软件的下载源换成更快、更稳的镜像
+Comment[en]=Switch every software source to a faster, more reliable mirror
+Exec=srcmgr
+Icon=org.sourcemanager.SourceManager
+Terminal=true
+Categories=Settings;System;PackageManager;
+Keywords=mirror;source;apt;npm;pip;镜像;源;
+StartupNotify=true

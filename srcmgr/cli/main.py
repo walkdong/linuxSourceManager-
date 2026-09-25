@@ -493,6 +493,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _gui_unavailable(argv[1:])
     if argv[0] == "--install-shortcut":
         return _install_shortcut(argv[1:])
+    # A downloaded single-file build parks itself in ~/.local/bin and creates the menu
+    # entry on its very first run, so the user never has to keep track of the file.
+    _first_run_setup(argv)
     if argv[0] == "--tui":
         return run_tui(argv[1:])
     if argv[0] == "--shell":
@@ -500,6 +503,43 @@ def main(argv: Sequence[str] | None = None) -> int:
     if argv[0] == "--cli":
         return _run_cli(argv[1:])
     return _cli_mode_required(argv)
+
+
+def _first_run_setup(argv: Sequence[str]) -> None:
+    """First run of a packaged build: park the program and create the menu entry.
+
+    Never fatal and never interactive - if anything goes wrong the UI still starts.  The
+    marker lives next to the parked copy, so a fresh download into a fresh HOME does the
+    setup exactly once.
+    """
+    from ..core.paths import is_frozen
+
+    if not is_frozen():
+        return
+    try:
+        from ..core import shortcuts
+
+        parked = shortcuts.install_self()
+        marker = shortcuts.user_bin_dir().parent / "source-manager" / ".first_run_done"
+        if not marker.exists():
+            result = shortcuts.install()
+            from ..core.paths import ensure_dir
+
+            ensure_dir(marker.parent)
+            marker.write_text(
+                f"desktop entry: {result.path}\nparked binary: {parked.path}\n",
+                encoding="utf-8",
+            )
+            # Tell the user once, on stderr, so the UI transcript stays clean.
+            import sys as _sys
+
+            print(
+                f"已安装到 {parked.path}，并在应用菜单创建了“源管理器”。\n"
+                f"以后直接从应用菜单打开即可，这个下载的文件可以删掉。",
+                file=_sys.stderr,
+            )
+    except Exception:  # noqa: BLE001 - setup is a convenience, never a blocker
+        return
 
 
 def _install_shortcut(argv: Sequence[str]) -> int:
@@ -517,6 +557,10 @@ def _install_shortcut(argv: Sequence[str]) -> int:
             )
             return 0
     try:
+        if "--remove" not in argv:
+            # Park the running binary first: a downloaded file can be moved or deleted, and
+            # the desktop entry must not point into ~/Downloads.
+            shortcuts.install_self()
         result = shortcuts.install(
             system="--system" in argv,
             remove="--remove" in argv,
@@ -529,6 +573,9 @@ def _install_shortcut(argv: Sequence[str]) -> int:
         return 0
     out.success(f"已在应用菜单创建“源管理器”，路径：{result.path}")
     out.note("现在可以在应用菜单里搜索“源”或“Source Manager”打开它。")
+    parked = shortcuts.installed_binary()
+    if parked.exists() and not shortcuts.on_path():
+        out.warning(f"{shortcuts.USER_BIN} 不在 PATH 里，命令行方式请用完整路径。")
     if not result.icon_installed:
         out.note("（可选）把图标文件放到 ~/.local/share/icons 可以显示自定义图标。")
     return 0

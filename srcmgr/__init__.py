@@ -15,7 +15,7 @@ from __future__ import annotations
 
 __all__ = ["__version__", "APP_NAME"]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 #: Human readable application name, used by the CLI and the config/state dirs.
 APP_NAME = "source-manager"

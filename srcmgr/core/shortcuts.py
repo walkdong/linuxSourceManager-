@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
-from .paths import atomic_write_text, ensure_dir
+from .paths import atomic_write_text, ensure_dir, is_frozen
 
 APP_ID = "source-manager"
 DESKTOP_NAME = f"{APP_ID}.desktop"
@@ -61,13 +61,69 @@ def applications_dir(*, system: bool = False) -> Path:
     return Path(base) / "applications"
 
 
+#: Where a packaged build parks itself so the desktop entry has a stable path.
+USER_BIN = "~/.local/bin"
+
+
+def user_bin_dir() -> Path:
+    return Path(os.path.expanduser(USER_BIN))
+
+
+def installed_binary() -> Path:
+    """The stable copy of the program that desktop entries should point at."""
+    return user_bin_dir() / "srcmgr"
+
+
 def launcher_argv() -> list[str]:
-    """How the desktop entry should start the menu UI, robust to where it is installed."""
-    # Prefer the console script; fall back to `python -m srcmgr` for a source checkout.
+    """How the desktop entry should start the menu UI, robust to where it is installed.
+
+    Order matters: an installed copy of the program first (a packaged build parks itself
+    there), then the console script, then ``python -m srcmgr`` for a plain checkout.
+    """
+    parked = installed_binary()
+    if parked.exists() and os.access(parked, os.X_OK):
+        return [str(parked)]
     script = shutil.which("srcmgr")
     if script:
         return [script]
+    if is_frozen():
+        # Running from the downloaded file itself: point at it in place.
+        return [str(Path(os.sys.executable).resolve())]
     return [os.sys.executable or "python3", "-m", "srcmgr"]
+
+
+def install_self(*, force: bool = False) -> ShortcutResult:
+    """Copy a packaged single-file build to ``~/.local/bin`` (idempotent).
+
+    A downloaded file can be moved, renamed or deleted at any time, so the desktop entry
+    must not point at it.  Called automatically on the first run of a bundled build.
+    """
+    import hashlib
+
+    source = Path(os.sys.executable).resolve()
+    target = installed_binary()
+    if not is_frozen():
+        # Source checkout / pip install: nothing to copy.
+        return ShortcutResult(path=target, terminal="")
+    if target.exists() and not force:
+        try:
+            if hashlib.sha256(target.read_bytes()).digest() == hashlib.sha256(
+                source.read_bytes()
+            ).digest():
+                return ShortcutResult(path=target, terminal="")
+        except OSError:
+            pass
+    ensure_dir(target.parent)
+    shutil.copy2(source, target)
+    os.chmod(target, target.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return ShortcutResult(path=target, terminal="")
+
+
+def on_path() -> bool:
+    """Whether ``~/.local/bin`` is on ``$PATH`` (it is not by default on some systems)."""
+    entries = [entry for entry in os.environ.get("PATH", "").split(os.pathsep) if entry]
+    wanted = str(user_bin_dir())
+    return any(os.path.abspath(entry) == wanted for entry in entries)
 
 
 def terminal_command() -> tuple[str, list[str]]:

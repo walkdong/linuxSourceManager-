@@ -4,20 +4,43 @@
 > `CLAUDE.md` → `PROGRESS.md` → `git log` → the code named below, then continue from
 > the **NEXT STEP** section. Do not re-plan the project from scratch.
 
-*Last updated: 2026-09-25 (session 4 — M5.1 视觉重做 + 语言切换 + 状态语义, 387 tests green)*
+*Last updated: 2026-09-25 (session 5 — M6 发布：一行安装 + 单文件 + CI/Flatpak 就绪, 402 tests green)*
 *Version: 0.1.0 — GUI deliberately not started (CLI + core only).*
 
 ---
 
 ## 1. Where the project is
 
-**Phase: M5.1 complete — 视觉重做（去 emoji / 单一强调色 / 四态状态）+ 语言切换。**
+**Phase: M6 complete — 可对外发布（一行命令安装 + 单文件可执行 + CI 自动发版）。**
+版本号已从 0.1.0 提到 **0.2.0**（对外可用的四前端模型 + 视觉规范 + 安装器）。
 M3 (engine/plugins/registry) and M4 (frontend split) are frozen; M5 is the
 "my grandmother / a primary-school kid can use it" layer.
 
-Status: **387 tests passing**, 14 manager plugins, 7 source providers (**144 registry
-entries**), four frontends, `pip install` verified from a wheel in a clean venv, nothing
-under `/etc` ever written outside the sandboxed test roots (fingerprinted before/after).
+Status: **402 tests passing**, 14 manager plugins, 7 source providers (**144 registry
+entries**), four frontends, three install paths (install.sh / single-file / Flatpak 清单就绪),
+nothing under `/etc` ever written outside the sandboxed test roots (fingerprinted
+before/after).
+
+### M6 — 发布（让别人装完就能用）
+
+| 交付物 | 状态 | 说明 |
+|---|---|---|
+| `scripts/install.sh` + `--uninstall` | ✅ 端到端验证 | 找 Python≥3.10 → 建独立 venv → 装到 `~/.local/bin` → 自动建应用菜单图标；无 Python 时给两条出路；卸载**保留**用户配置 |
+| `scripts/build_binary.sh` | ✅ 链路验证 | 在 `ubuntu:22.04`（glibc 2.35）容器里构建，兼容 22.04/24.04/26.04 + Debian 12/13；`--native` 仅供本机验证 |
+| `packaging/entry.py` + `pyinstaller.spec` | ✅ | 单文件版含内置 provider；`_build_flavor.py` 决定 menu / cli 两种口味；**必须 `collect_submodules("srcmgr")`**（插件是动态加载的，静态分析看不见） |
+| 首启自安装 | ✅ | 打包版第一次运行把自己复制到 `~/.local/bin/srcmgr` 并建桌面图标（下载的文件之后可删）；内容变了会自动重新部署 |
+| `.github/workflows/build.yml` | ✅ 已写，未在 GitHub 实跑 | 3 个 Python 版本跑测试+lint；wheel/sdist；容器构建单文件并**在无 Python 容器里冒烟测试**；install.sh 端到端；tag 触发 Release + PyPI（OIDC Trusted Publishing） |
+| Flatpak | 🚧 阶段 1 | 清单/desktop/metainfo 就绪；`/etc` **只读**、只开放用户级源；python 依赖 sha256 待生成；`--filesystem=host` 属阶段 2，未开启 |
+| `docs/安装与发布.md` | ✅ | 面向使用者的中文安装/验证/排查 + 面向发布者的打 tag、CI、Flatpak 上架、网盘传播 |
+
+**发布前剩下的事（按顺序）**：
+1. 把仓库推到 GitHub（`pyproject.toml` 的 urls、`install.sh` 的 `REPO_SLUG`、metainfo 的
+   homepage 三处占位地址改成真实地址）
+2. 配 PyPI Trusted Publishing（GitHub 发布者填 `owner/repo` + workflow `build.yml` +
+   environment `pypi`），然后 `git tag v0.2.0 && git push origin v0.2.0`
+3. Flatpak：`flatpak-pip-generator textual prompt_toolkit` 生成依赖 sha256 替换占位符
+4. 可选：单文件版做 GPG/ cosign 签名（现在只有 SHA256SUMS）
+5. 可选（阶段 2）：验证 Flatpak 里用 `flatpak-spawn --host sudo` 改系统源是否可行
 
 ### M5.1 — 外观与状态语义（产品负责人反馈后重做）
 
@@ -119,11 +142,12 @@ Key design decisions (do not undo these casually):
 | 8 | 14 manager plugins: apt, flatpak, snap, docker, npm, yarn, pnpm, pip, cargo, go, git, maven, rubygems, conda | ✅ | `srcmgr/bundled/managers/*` |
 | 9 | Source registry: 7 providers, 144 entries, `${codename}`/`${distro}` templating, verified mirror URLs | ✅ | `srcmgr/bundled/providers/*` |
 | 10 | Plugin/source-provider marketplace flow (install/trust/uninstall/scaffold) | ✅ | `core/plugins.py`, `cli/commands.py` |
-| 11 | Tests: 387 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt family 16 + shell 26 + locks 14 + menu 24 + design 19) | ✅ all green | `tests/` |
+| 11 | Tests: 402 (… + design 19 + release 15) | ✅ all green | `tests/` |
 | 12 | Docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/{source-providers,architecture,operations,tui}.md`, `LICENSE` | ✅ | repo root, `docs/` |
 | 14 | **M4 frontends**: `--cli` gate, `--gui` reservation, interaction seam, typed REPL | ✅ | `core/interaction.py`, `tui/shell.py` |
 | 15 | **M5 菜单界面**: Textual 首页/镜像页/引导/对话框/锁/鼠标/提权，中文 i18n，桌面图标 | ✅ | `tui/app.py`, `tui/data.py`, `tui/i18n.py`, `tui/sudo.py`, `core/locks.py`, `core/shortcuts.py` |
 | 16 | **M5.1 视觉规范**: 去 emoji、单一强调色、四态低饱和状态、纯文字动作、明暗主题、语言切换 | ✅ | `tui/theme.py`, `tui/i18n.py`, `tui/data.py` |
+| 17 | **M6 发布**: install.sh/uninstall、单文件可执行（双 flavour + 首启自安装）、CI/Release/PyPI、Flatpak 阶段1、中文安装文档 | ✅ | `scripts/`, `packaging/`, `.github/workflows/build.yml`, `docs/安装与发布.md` |
 | 13 | `pip install -e .` + console scripts `srcmgr` / `source-manager` | ✅ verified | `pyproject.toml` |
 
 ### Bugs found and fixed this session (regression-tested)
@@ -321,6 +345,13 @@ per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
 
 ## 5. Session log (newest first)
 
+* **session 5** — M6 发布：安装器（含卸载、无 Python 提示、本地 wheel 模式）、单文件可执行
+  （menu/cli 两 flavour，验证了内置 provider 加载、界面渲染、首启自安装、覆盖更新）、
+  GitHub Actions（测试矩阵/wheel/容器构建单文件 + 无 Python 冒烟/安装器端到端/tag 发 PyPI 与
+  Release）、Flatpak 阶段 1 清单、中文《安装与发布》文档；版本号 0.1.0 → 0.2.0；
+  新增 `tests/test_release.py`（15 个）；测试 387 → **402**。
+  过程中修的两个真问题：单文件里动态加载的插件让 PyInstaller 漏收 `srcmgr.core.helpers`；
+  `BUNDLED_ROOT` 在导入时固化导致打包后指向不存在的路径。
 * **session 4** — M5.1：按"太 AI 味 / 圆点丑 / 按钮丑 / 缺语言切换 / 个别源失效表意不对"的反馈
   重做视觉：新增 `tui/theme.py`（调色板+字形+样式表+注册函数）、四态健康语义（备用源失效=黄，
   主源失效=红）、顶栏（标题+语言切换+锁定数+权限）、动作改纯文字、明暗主题；修 6 个 bug，

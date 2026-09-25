@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>org.sourcemanager.SourceManager</id>
+  <name>Source Manager</name>
+  <name xml:lang="zh_CN">源管理器</name>
+  <summary>Manage the software sources, registries and mirrors of every ecosystem</summary>
+  <summary xml:lang="zh_CN">统一管理这台电脑上所有软件的下载源与镜像</summary>
+  <description>
+    <p>
+      A plugin-based source/registry/mirror manager for Linux: see and switch the
+      download source of APT, npm, Yarn, pnpm, pip, Cargo, Go, Flatpak, Docker, Git,
+      Maven, RubyGems and Conda from one place, measure which mirror is fastest right
+      now, and undo everything (every change is snapshotted first).
+    </p>
+    <p xml:lang="zh_CN">
+      一个插件化的软件源/镜像管理器：在一处查看并切换 APT、npm、Yarn、pnpm、pip、Cargo、Go、
+      Flatpak、Docker、Git、Maven、RubyGems、Conda 的下载源，实测哪个镜像最快，
+      并且所有修改都可以撤销（改前自动备份）。
+    </p>
+    <p>
+      Note: inside the Flatpak sandbox only the ecosystems that live in your home
+      directory can be changed; system-wide sources (APT, Docker) are read-only here and
+      the app tells you the exact command to run on the host.
+    </p>
+  </description>
+  <launchable type="desktop-id">org.sourcemanager.SourceManager.desktop</launchable>
+  <url type="homepage">https://github.com/source-manager/source-manager</url>
+  <provides>
+    <binary>srcmgr</binary>
+  </provides>
+  <releases>
+    <release version="0.2.0" date="2026-09-25"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

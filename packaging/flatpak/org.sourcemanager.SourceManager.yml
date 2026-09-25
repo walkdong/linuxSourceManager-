@@ -1,0 +1,86 @@
+# Flatpak manifest - stage 1: sandboxed, user-level sources only.
+#
+# WHAT THIS CAN AND CANNOT DO (read before changing permissions)
+# --------------------------------------------------------------
+# Flatpak sandboxes the app away from the host filesystem.  Source Manager's *whole point*
+# is editing host configuration in /etc/apt, /etc/docker, ... so a sandboxed build cannot
+# do that.  This manifest therefore ships stage 1:
+#
+#   * it can READ the host config it is allowed to see and manage everything that lives in
+#     $HOME (npm, yarn, pnpm, pip, cargo, go, git, conda, the user half of flatpak),
+#   * system ecosystems (APT, Docker, system Flatpak/Snap) report "needs host permission"
+#     and offer the exact `srcmgr --cli` command to run instead.
+#
+# Stage 2 (host writes) requires a privileged helper on the host; see
+# docs/安装与发布.md.  Granting "--filesystem=host" and calling `flatpak-spawn --host sudo`
+# from inside is technically possible, but it has to be validated on a real desktop before
+# it ships, and it changes the security story, so it is deliberately not enabled here.
+#
+# Build:  flatpak-builder --user --install --force-clean build/flatpak packaging/flatpak/org.sourcemanager.SourceManager.yml
+id: org.sourcemanager.SourceManager
+runtime: org.freedesktop.Platform
+runtime-version: "24.08"
+sdk: org.freedesktop.Sdk
+command: srcmgr
+# The program is a terminal UI: let Flatpak give it a terminal on the host.
+finish-args:
+  - --share=network
+  # Read-only access to the host configuration we only inspect.
+  - --filesystem=/etc/apt:ro
+  - --filesystem=/etc/docker:ro
+  - --filesystem=~/.npmrc:ro
+  - --filesystem=~/.config/pip:ro
+  # The ecosystems that live in $HOME need real write access.
+  - --filesystem=~/.npmrc
+  - --filesystem=~/.yarnrc
+  - --filesystem=~/.yarnrc.yml
+  - --filesystem=~/.config/pip
+  - --filesystem=~/.pip
+  - --filesystem=~/.cargo
+  - --filesystem=~/.config/go
+  - --filesystem=~/.m2
+  - --filesystem=~/.gemrc
+  - --filesystem=~/.condarc
+  - --filesystem=~/.gitconfig
+  - --filesystem=xdg-config/git:create
+  - --filesystem=~/.local/share/flatpak:create
+  # Backups/history/config of the app itself.
+  - --filesystem=xdg-config/source-manager:create
+  - --filesystem=xdg-data/source-manager:create
+  - --filesystem=xdg-cache/source-manager:create
+modules:
+  - name: python3-yaml
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "PyYAML>=6.0" --no-build-isolation
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/source/P/PyYAML/pyyaml-6.0.3.tar.gz
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+  - name: python3-deps
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --find-links="file://${PWD}"
+        --prefix=${FLATPAK_DEST} "textual" "prompt_toolkit" --no-build-isolation
+    sources:
+      # Regenerate these with: flatpak-pip-generator textual prompt_toolkit
+      # (the generator writes the correct urls + sha256; placeholders below must be
+      # replaced before the first build - a build with them fails loudly, on purpose).
+      - type: file
+        url: https://files.pythonhosted.org/packages/source/t/textual/textual-8.2.8.tar.gz
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+      - type: file
+        url: https://files.pythonhosted.org/packages/source/p/prompt_toolkit/prompt_toolkit-3.0.53.tar.gz
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+  - name: source-manager
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --no-index --no-build-isolation --prefix=${FLATPAK_DEST} .
+      - install -Dm644 packaging/flatpak/org.sourcemanager.SourceManager.metainfo.xml
+        ${FLATPAK_DEST}/share/metainfo/org.sourcemanager.SourceManager.metainfo.xml
+      - install -Dm644 packaging/flatpak/org.sourcemanager.SourceManager.desktop
+        ${FLATPAK_DEST}/share/applications/org.sourcemanager.SourceManager.desktop
+    sources:
+      - type: dir
+        path: ../..

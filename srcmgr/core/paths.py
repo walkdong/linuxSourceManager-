@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,41 @@ import yaml
 from .errors import ConfigError
 
 APP_DIRNAME = "source-manager"
+
+
+# ---------------------------------------------------------------------------
+# packaged ("frozen") runs
+# ---------------------------------------------------------------------------
+def is_frozen() -> bool:
+    """True when running from a PyInstaller single-file/one-dir build.
+
+    ``sys._MEIPASS`` is where PyInstaller unpacks a one-file build: a fresh temporary
+    directory every run, so nothing may be *written* there - the bundled plugins are read
+    from it, while config/state still go to the user's XDG directories.
+    """
+    return bool(getattr(sys, "frozen", False)) or hasattr(sys, "_MEIPASS")
+
+
+def bundle_root() -> Path:
+    """Directory that holds the bundled plugin data (``managers/`` + ``providers/``).
+
+    In a source checkout that is ``<repo>/srcmgr/bundled``; inside a PyInstaller build the
+    bundling spec places the same tree next to the extracted package.
+    """
+    override = os.environ.get("SRCMGR_BUNDLE_ROOT", "").strip()
+    if override:
+        candidate = Path(override) / "bundled"
+        if candidate.is_dir():
+            return candidate
+    if is_frozen():
+        candidates = [
+            Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent)) / "bundled",
+            Path(sys.executable).resolve().parent / "bundled",
+        ]
+        for candidate in candidates:
+            if candidate.is_dir():
+                return candidate
+    return Path(__file__).resolve().parent.parent / "bundled"
 
 
 def _env(name: str) -> str | None:

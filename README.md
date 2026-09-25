@@ -32,7 +32,33 @@ Why it exists:
 
 ---
 
-## Install / run
+## 安装（三种方式，选一个）
+
+**① 一行命令（推荐，任何发行版）**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/source-manager/source-manager/main/scripts/install.sh | sh
+```
+
+装完从**应用菜单**点"源管理器"即可（会自动创建图标）。它只往 `~/.local/bin` 和
+`~/.local/share/source-manager` 写东西，不动系统 Python、不装到 `/usr`。
+
+**② 单文件可执行（不需要 Python）**
+
+从 [Releases](https://github.com/source-manager/source-manager/releases) 下载
+`srcmgr-linux-x86_64`：
+
+```sh
+chmod +x srcmgr-linux-x86_64 && ./srcmgr-linux-x86_64
+```
+
+首次运行会把自己装到 `~/.local/bin` 并创建菜单图标（支持 Ubuntu 22.04+/Debian 12+）。
+
+**③ Flatpak**（软件中心；受沙箱限制，只能改用户级源，系统源为只读展示）
+
+详细的安装/校验/卸载/排查见 [`docs/安装与发布.md`](docs/安装与发布.md)。
+
+## 从源码运行
 
 No installation is required to try it (only PyYAML):
 

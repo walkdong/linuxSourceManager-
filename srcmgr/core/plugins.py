@@ -37,9 +37,17 @@ from .api import (
     SourceProviderPlugin,
 )
 from .errors import ManifestError, PluginError
-from .paths import ensure_dir, load_yaml, user_plugins_dir
+from .paths import bundle_root, ensure_dir, load_yaml, user_plugins_dir
 
-BUNDLED_ROOT = Path(__file__).resolve().parent.parent / "bundled"
+def default_bundled_root() -> Path:
+    """Where the shipped plugins live.
+
+    Resolved per call rather than at import time: a packaged build unpacks into a fresh
+    temporary directory and sets ``SRCMGR_BUNDLE_ROOT`` in its entry script, which happens
+    *after* modules could have been imported.  Import-time caching would then point at a
+    path that does not exist.
+    """
+    return bundle_root()
 MANIFEST_NAME = "plugin.yaml"
 TRUST_MARKER = ".trusted"
 
@@ -157,7 +165,7 @@ def _absent_manifest(directory: Path, reason: str) -> PluginManifest:
         name=directory.name,
         display_name=directory.name,
         present=False,
-        bundled=BUNDLED_ROOT in directory.parents,
+        bundled=default_bundled_root() in directory.parents,
         base_dir=str(directory),
         warnings=[reason],
     )
@@ -365,7 +373,7 @@ class PluginLoader:
         trust_user_plugins: bool = False,
     ) -> None:
         self.user_dir = Path(user_dir) if user_dir else user_plugins_dir()
-        self.bundled_root = Path(bundled_root) if bundled_root else BUNDLED_ROOT
+        self.bundled_root = Path(bundled_root) if bundled_root else default_bundled_root()
         self.trust_user_plugins = trust_user_plugins
         extra = list(extra_paths or [])
         env_path = os.environ.get("SRCMGR_PLUGIN_PATH", "")
@@ -722,7 +730,7 @@ sources:
 
 
 __all__ = [
-    "BUNDLED_ROOT",
+    "default_bundled_root",
     "DataProvider",
     "LoadedManager",
     "LoadedProvider",

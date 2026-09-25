@@ -10,3 +10,4 @@ dist/
 # Local runtime state (never commit a user's sources/backups)
 *.log
 /tmp/
+_build_flavor.py
