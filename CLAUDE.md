@@ -39,7 +39,8 @@ Value proposition, in priority order:
 4. **Two-level plugin market**: *manager* plugins (how to operate an ecosystem) and
    *source providers* (which sources exist), independently publishable.
 
-GUI is intentionally out of scope for now (a future consumer of `srcmgr.core`).
+Three frontends share the engine: an interactive TUI (bare `srcmgr`), the CLI
+(`srcmgr --cli …`) and a reserved GUI slot (`srcmgr --gui`, not implemented yet).
 
 ## 2. Repository map
 
@@ -58,7 +59,7 @@ srcmgr/
     interaction.py frontend seam: ask/output hooks + current frontend name
     selection.py   "tuna" | "#3" | id | url → a Source
   cli/
-    main.py        argparse tree (git-style: `srcmgr apt list`)
+    main.py        entry dispatch (TUI/CLI/GUI) + argparse tree for --cli
     commands.py    one function per command
     output.py      tables/colour/JSON/prompts (no rich/click dependency)
   bundled/
@@ -98,13 +99,15 @@ bin/srcmgr         run straight from a checkout
 
 ## 4. How to work here
 
-* Python ≥ 3.10, dependencies: `PyYAML` (runtime), `pytest` (dev). Use the checkout's
-  virtualenv: `.venv/bin/python` (created with `python3 -m venv .venv`).
-* Run the suite: `.venv/bin/python -m pytest tests/ -q`.
-* Run the CLI from the checkout: `.venv/bin/python bin/srcmgr <args>`
-  (or `pip install -e .` for the `srcmgr` console script).
+* Python ≥ 3.10, dependencies: `PyYAML` + `prompt_toolkit` (runtime), `pytest` (dev).
+  Use the checkout's virtualenv: `.venv/bin/python` (created with `python3 -m venv .venv`).
+* Run the suite: `.venv/bin/python -m pytest tests/ -q` (it sets `SRCMGR_OFFLINE=1`, so it
+  never touches the network; keep it that way — a real-network test cost 70 s).
+* Run the CLI from the checkout: `.venv/bin/python bin/srcmgr --cli <args>`
+  (or `pip install -e .` for the `srcmgr` console script).  A bare `bin/srcmgr` opens the
+  TUI and therefore needs a real terminal.
 * Hermetic CLI run:
-  `SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache .venv/bin/python bin/srcmgr …`
+  `SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache .venv/bin/python bin/srcmgr --cli …`
 * **Keep `PROGRESS.md` current**: it is the hand-off document. Update its
   "Current status" and "Next step" sections *before* you stop working.
 * Commit in small, described steps (`git commit`), because the next session starts by
@@ -158,7 +161,8 @@ Rules:
 
 ## 6. Definition of done for any change
 
-* `.venv/bin/python -m pytest tests/ -q` passes.
+* `.venv/bin/python -m pytest tests/ -q` passes, and `.venv/bin/python -m pyflakes
+  srcmgr/ tests/` is clean (it has already caught two silent bugs).
 * The affected CLI paths were exercised manually against a hermetic env and the real
   system was proven untouched (hash the files before/after).
 * `PROGRESS.md` updated, `git log` tells the story, no debug prints left behind.
