@@ -4,20 +4,21 @@
 > `CLAUDE.md` → `PROGRESS.md` → `git log` → the code named below, then continue from
 > the **NEXT STEP** section. Do not re-plan the project from scratch.
 
-*Last updated: 2026-09-25 (session 1, continuing)*
+*Last updated: 2026-09-25 (session 1, final pass — registry complete, 304 tests green)*
 *Version: 0.1.0 — GUI deliberately not started (CLI + core only).*
 
 ---
 
 ## 1. Where the project is
 
-**Phase: M3 — verification & polish.** Everything functional is implemented; what
-remains is end-to-end verification against the real registry, small gaps (documented
-below) and the final hand-off pass.
+**Phase: M3 complete — verified, documented, committed.** Every milestone from the
+original brief is implemented; the remaining work is listed under *Known gaps* and is
+optional polish.
 
-Status: `273 tests passing`, 14 manager plugins, 7 source providers (≈144 registry
-entries), CLI working end to end, nothing under `/etc` ever written outside the
-sandboxed test roots.
+Status: **304 tests passing**, 14 manager plugins, 7 source providers (**144 registry
+entries**, every URL HTTP-verified by the provider author), CLI working end to end,
+`pip install` verified from a wheel in a clean venv, nothing under `/etc` ever written
+outside the sandboxed test roots (fingerprinted before/after every session).
 
 ### Done
 
@@ -31,10 +32,10 @@ sandboxed test roots.
 | 6 | Append-only history, rollback, opt-in fallback planner | ✅ | `core/history.py`, `core/runtime.py` |
 | 7 | Full CLI; global flags accepted anywhere (`--json/--porcelain/-n/-y/-v/-q/--config/--color`) | ✅ | `srcmgr/cli/*` |
 | 8 | 14 manager plugins: apt, flatpak, snap, docker, npm, yarn, pnpm, pip, cargo, go, git, maven, rubygems, conda | ✅ | `srcmgr/bundled/managers/*` |
-| 9 | Source registry: 7 providers, ≈144 entries, `${codename}`/`${distro}` templating | ✅ | `srcmgr/bundled/providers/*` |
+| 9 | Source registry: 7 providers, 144 entries, `${codename}`/`${distro}` templating, verified mirror URLs | ✅ | `srcmgr/bundled/providers/*` |
 | 10 | Plugin/source-provider marketplace flow (install/trust/uninstall/scaffold) | ✅ | `core/plugins.py`, `cli/commands.py` |
-| 11 | Tests: 273 (plugins 206 + CLI 26 + core 19 + providers 22) | ✅ all green | `tests/` |
-| 12 | Project memory + docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/source-providers.md` | ✅ | repo root, `docs/` |
+| 11 | Tests: 304 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt archive family 16) | ✅ all green | `tests/` |
+| 12 | Docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/{source-providers,architecture,operations}.md`, `LICENSE` | ✅ | repo root, `docs/` |
 | 13 | `pip install -e .` + console scripts `srcmgr` / `source-manager` | ✅ verified | `pyproject.toml` |
 
 ### Bugs found and fixed this session (regression-tested)
@@ -57,25 +58,47 @@ sandboxed test roots.
 9. `--china` leaked entries that never declared a country → country metadata is now
    authoritative.
 
-### Known gaps / TODO (ordered)
+### Bugs found and fixed this session (regression-tested)
 
-1. **`snap` has no registry entries** (it has one store, so there is nothing to mirror).
-   Add a single official entry (`https://api.snapcraft.io`, `kind: official`) to
-   `cloud-vendor` so `srcmgr snap list --available` is not empty.
-2. **APT China mirror fallback path**: China mirrors currently fall back to `.../debian/`
-   for entries that serve both Debian and Ubuntu. On this Ubuntu box the template
-   expansion produces the right URL, but a static `url:` fallback of `.../ubuntu/`
-   (or split keys, e.g. `tuna` / `tuna-debian`) is more correct. The provider owner was
-   asked to fix and report.
-3. Re-run the whole suite **after the provider subagent stops** (it edits
-   `bundled/providers/**` and `tests/test_providers.py` concurrently; one transient
-   failure was observed mid-write).
-4. `srcmgr apt choose` has only been exercised non-interactively; do one interactive run
-   and paste the transcript into the README.
-5. Optional: a `srcmgr snap` root-requirement note in `docs/`, a systemd timer example
-   for `srcmgr health --watch`, and a GitHub-Actions style CI recipe in the docs.
+1. Backup restore resolved payloads against the wrong root → "snapshot payload missing".
+2. Rollback left behind files the change had created → `BackupStore.record_paths()`.
+3. Two snapshots in the same second with different content collided on one id and
+   overwrote each other → the id fingerprints file contents.
+4. Provider top-level keys (`url_template`, `countries`, …) were dropped → folded into
+   `Source.extra`.
+5. `${codename}`/`${distro}` expansion was not wired through `_expand_templates`.
+6. 404 was treated as "mirror down" → `reachable` classification (`dl.google.com`,
+   Docker Hub, `repo.charm.sh` were false alarms).
+7. An unresolvable placeholder was silently accepted when `url_template == url`, so a
+   literal `${codename}` could be written into a sources file.
+8. `apt`'s `${distro}` was the raw os-release `ID`, so Mint/Pop!_OS produced paths no
+   mirror serves → `archive_family()` maps derivatives to the archive that exists, while
+   Kali/Raspbian/Parrot keep their own id (loud failure instead of a wrong source).
+9. A HEAD network error used to trigger a GET retry, turning a good probe into a failure
+   when the host resets on GET (`packages.microsoft.com`); the retry now happens only for
+   real "wrong method" statuses and inspects the HTTP code, not the verdict string.
+10. Global flags were only accepted before the sub-command (argparse ambiguity) → one
+    central splitter (`_parse_flexible` + `_split_globals`).
+11. `PermissionDenied` fired before the `--dry-run` short-circuit.
+12. `--china` leaked entries that never declared a country; state column could print
+    `enabled,disabled,current`.
+13. History timestamps had second resolution, so rapid changes compared equal and
+    `rollback` could pick the wrong entry.
 
----
+### Known gaps / TODO (optional polish, in order)
+
+1. **`snap` has no provider catalogue** — by design: snapd has a single hardcoded store,
+   which the snap manager plugin already exposes via `list_available()` (visible through
+   `srcmgr snap available`).  Nothing to add unless snap ever grows mirrors.
+2. **Microsoft's apt repo** (`packages.microsoft.com`) resets connections on any probe
+   from this machine, for `urllib` and `curl` alike (OpenSSL 3.5 `unexpected eof`).  It is
+   reported as a failure; this is an environment/TLS-stack issue, not a probe bug.  If it
+   matters, add a per-source `health.allow_missing: true` override or probe a different
+   path.
+3. `srcmgr apt choose` was exercised non-interactively (`--yes` picks the fastest); one
+   human interactive run is still worth doing for the transcript.
+4. Optional: CI recipe (GitHub Actions running `pytest`), a `srcmgr health` systemd timer
+   example is already in `docs/operations.md`, and provider signing for the marketplace.
 
 ## 2. NEXT STEP (start here in a new session)
 
@@ -89,8 +112,9 @@ SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/
 .venv/bin/python -m pytest tests/test_cli.py -q            # 4. CLI end-to-end
 ```
 
-Then work **TODO 1 → 2 → 3 → 4** in order, updating this file after each.
-Verify at the end that the real system is untouched:
+All of the above should be green (304 tests, 7 providers `ok`, 144 sources).  Then pick
+the first item from *Known gaps* that matters to you.  Verify at the end that the real
+system is untouched:
 
 ```bash
 find /etc/apt /etc/docker -type f -exec md5sum {} + | sort | md5sum
@@ -141,6 +165,11 @@ per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
 
 ## 5. Session log (newest first)
 
+* **session 1 (final)** — registry finished and verified by its author (144 sources, all
+  URLs curl-checked, dead mirrors removed: Ruby China's broken TLS, TUNA/USTC/163 docker
+  accelerators, USTC/TUNA/NJU Go proxies, conda substitutions); fixed the derivative
+  `${distro}` mapping and the placeholder/HEAD-probe bugs; `apt choose` exercised end to
+  end; docs completed (`architecture.md`, `operations.md`, `LICENSE`); 304 tests.
 * **session 1 (continued)** — integrated the source registry (7 providers, ≈144 entries);
   fixed 9 bugs (backup restore/id collisions, created-file rollback, provider extras,
   template expansion, `reachable` health classification, global-flag parsing, dry-run

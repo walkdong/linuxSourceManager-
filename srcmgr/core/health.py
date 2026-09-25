@@ -49,6 +49,10 @@ REACHABLE_HTTP = OK_HTTP | {400, 401, 403, 404, 405, 406, 410, 429}
 #: 5xx means the mirror itself is broken or overloaded - a genuine failure.
 BROKEN_HTTP = {500, 501, 502, 503, 504, 507, 508, 521, 522, 523, 524}
 
+#: Statuses where a HEAD probe says "I will not answer this method" rather than
+#: "nothing here", so asking again with GET is worthwhile.
+HEAD_UNSUPPORTED = {401, 403, 405, 501}
+
 _HTTP_IN_TEXT = re.compile(r"\b(?:HTTP[/ ]?\d(?:\.\d)?\s*)?(\d{3})\b")
 
 
@@ -95,6 +99,7 @@ def probe_url(
     headers: dict[str, str] | None = None,
 ) -> ProbeResult:
     """Probe one URL. Never raises for network problems."""
+    method = (method or "HEAD").strip().upper() or "HEAD"
     if not url:
         return ProbeResult(ok=False, status="no-url", error="source has no URL")
     if not re.match(r"^https?://", url):
@@ -110,14 +115,22 @@ def probe_url(
         )
         if last.ok:
             return last
-        # A 4xx/5xx from HEAD is worth retrying with GET before giving up: plenty of
-        # registries do not implement HEAD.
-        if method == "HEAD":
+        if method == "HEAD" and last.http_status in HEAD_UNSUPPORTED:
+            # Some servers reject HEAD outright (405/501) or hide the resource from it
+            # (401/403): those are worth asking again with GET.  The test must look at the
+            # HTTP status, not ProbeResult.status - a 405 arrives as status="reachable".
+            # A *network* error (timeout, reset, unreachable) is NOT retried with GET: a
+            # server that refuses HEAD sometimes also refuses a plain GET
+            # (packages.microsoft.com resets on GET), which used to turn a perfectly good
+            # probe into a failure.
             fallback = _probe_once(
                 url, timeout=timeout, check_tls=check_tls, method="GET", headers=headers
             )
             if fallback.ok:
                 return fallback
+            # Keep the HEAD answer when the GET retry failed for a network reason.
+            if fallback.http_status is None:
+                return last
             last = fallback
     return last or ProbeResult(ok=False, status="error", url=url)
 

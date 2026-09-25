@@ -312,3 +312,42 @@ def test_fallback_is_disabled_by_default():
     config = Config.defaults()
     assert config.fallback()["enabled"] is False
     assert config.fallback("apt")["enabled"] is False
+
+
+# ---------------------------------------------------------------------------
+# probe method fallback
+# ---------------------------------------------------------------------------
+def test_probe_retries_with_get_when_head_is_refused(monkeypatch):
+    """HEAD 405 means "wrong method", so a GET retry must be attempted."""
+    from srcmgr.core import health
+
+    seen: list[str] = []
+
+    def fake_once(url, *, timeout, check_tls, method, headers):
+        seen.append(method)
+        if method == "HEAD":
+            return health.ProbeResult(ok=False, status="reachable", url=url, http_status=405,
+                                      error="HTTP 405 Method Not Allowed (host answered)")
+        return health.ProbeResult(ok=True, status="ok", url=url, http_status=200, latency_ms=12.0)
+
+    monkeypatch.setattr(health, "_probe_once", fake_once)
+    result = health.probe_url("https://example.org/", method="HEAD")
+    assert result.ok and result.status == "ok"
+    assert seen == ["HEAD", "GET"]
+
+
+def test_probe_does_not_retry_get_after_a_network_error(monkeypatch):
+    """A host that resets on HEAD may also reset on GET; the HEAD answer must stand."""
+    from srcmgr.core import health
+
+    seen: list[str] = []
+
+    def fake_once(url, *, timeout, check_tls, method, headers):
+        seen.append(method)
+        return health.ProbeResult(ok=False, status="error", url=url,
+                                  error="Remote end closed connection without response")
+
+    monkeypatch.setattr(health, "_probe_once", fake_once)
+    result = health.probe_url("https://packages.example.org/", method="HEAD")
+    assert not result.ok
+    assert seen == ["HEAD"], "a network error must not trigger a GET retry"
