@@ -1,18 +1,60 @@
-# Interactive terminal UI (`srcmgr --tui`)
+# Interactive UIs
 
-The TUI is a **frontend for the same engine**: every line you type becomes a CLI argument
-list that is executed by `srcmgr.cli.main._run_cli`.  There is one implementation of
-"add an apt mirror", not two, so the TUI can never drift from the CLI.
+Two interactive frontends ship, both driving the **same engine**:
 
-## Starting it
+| Frontend | Opened by | For |
+|---|---|---|
+| 菜单界面 (menu UI) | `srcmgr`, `srcmgr --tui` | people who have never used a terminal — keys and mouse only |
+| 打字式 REPL (shell) | `srcmgr --shell` | people who prefer typing / debugging |
+
+Neither re-implements a command: the shell executes lines through
+`srcmgr.cli.main._run_cli` (exactly what `--cli` runs), and the menu calls the same
+runtime actions through `srcmgr/tui/data.py`. A command therefore behaves identically in
+all three places.
+
+## The menu UI (default)
 
 ```bash
-srcmgr                 # bare name = interactive UI
-srcmgr --tui           # same, explicit
-srcmgr --tui --help    # what the three frontends are
+srcmgr                 # 打开菜单界面
+srcmgr --install-shortcut   # 可选：创建桌面图标，以后双击打开
 ```
 
-`srcmgr --cli <command>` is the one-shot mode and is now **mandatory** for scripts:
+```
+ 软件                    现在用的是            状态              锁定
+ ⚫  APT（系统软件）        Ubuntu official      正常 · 32ms      🔓 点这里锁定
+ 🔒  npm（Node.js）        npmmirror            已锁定           🔒 已锁定（点击解锁）
+
+ 🩺 一键体检   ⚡ 一键换到最快源   ↩️ 撤销上一次修改   🗂 备份与还原   🚪 退出
+ ↑↓ 选择   Enter 进入   鼠标可点击   L 锁定/解锁   Q 退出
+```
+
+* `Enter`/click opens the mirror chooser for that ecosystem: the current source, a
+  speed-ranked shortlist (12 by default, `a` shows all), one-click switching, a
+  "type a URL" entry, rescan and undo.
+* `L` (or a click on the lock cell) pins an ecosystem. **A lock is a hard lock**: while it
+  is on, no source change happens — not by hand, not by 一键换最快, not by automatic
+  failover. `rollback`/`restore` still work (that is the escape hatch). The lock is stored
+  in `$SRCMGR_DATA_HOME/locks.json` and survives restarts.
+* 一键体检 probes the active source of every ecosystem; 一键换到最快源 measures the
+  shortlists, shows a confirmation listing exactly what will change (and what is skipped
+  because it is locked), then applies it — asking for the admin password when needed.
+* The admin password is requested **inside the UI** (UAC style) through a temporary
+  `SUDO_ASKPASS` helper: it never appears on a command line and is not kept on disk. It is
+  asked **at most once per run**; a second refusal is explained instead of re-prompting.
+* Failures are translated into plain Chinese with the action that fixes them
+  (`tui/i18n.py:friendly_error`). Strings come from the message table; `SRCMGR_LANG=en`
+  switches to English where a translation exists.
+* The first run shows a short welcome that is never shown again
+  (`general.seen_onboarding`).
+
+## The shell (`--shell`)
+
+```bash
+srcmgr --shell         # 打字式界面，命令和 --cli 完全一样（去掉 srcmgr 前缀）
+srcmgr --shell --help
+```
+
+`srcmgr --cli <command>` remains the one-shot mode and is **mandatory** for scripts:
 
 ```bash
 srcmgr --cli managers
@@ -23,7 +65,7 @@ srcmgr --cli --json health
 Running `srcmgr apt list` (no `--cli`) exits 2 and prints the corrected command, so a
 script can never accidentally launch an interactive UI.
 
-## What you see
+## What you see in the shell
 
 ```
 Source Manager 0.1.0 - one place for every ecosystem's sources
@@ -40,9 +82,9 @@ OK apt: added TUNA (Tsinghua) -> /etc/apt/sources.list.d/tuna.sources
 backup: 20260925-061312-apt-f9cb11 (undo with 'srcmgr rollback <manager>')
 ```
 
-## Commands
+## Shell commands
 
-Inside the UI you type the **same words as the CLI**, minus `--cli` and minus the
+Inside the shell you type the **same words as the CLI**, minus `--cli` and minus the
 program name:
 
 | Line | Meaning |
@@ -91,9 +133,11 @@ UI-only commands start with `:` (so they can never collide with a manager name):
 `srcmgr --gui` is reserved and currently exits 3 with "not implemented yet".  The GUI is
 expected to:
 
-1. import `srcmgr.core` only (never `srcmgr.cli`),
+1. import `srcmgr.core` (and may reuse `srcmgr.tui.data` for view models) but never
+   `srcmgr.cli` internals,
 2. install its own frontend hooks via `srcmgr.core.interaction.interactive(ask=…,
    output=…, name="gui")`,
-3. take over the bare `srcmgr` entry point, leaving `--tui`/`--cli` as they are.
+3. take over the bare `srcmgr` entry point when a graphical session is available, leaving
+   `--tui` (menu) / `--shell` / `--cli` as they are.
 
 That is the whole contract — see `docs/architecture.md`.

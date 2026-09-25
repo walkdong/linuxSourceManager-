@@ -39,14 +39,22 @@ Value proposition, in priority order:
 4. **Two-level plugin market**: *manager* plugins (how to operate an ecosystem) and
    *source providers* (which sources exist), independently publishable.
 
-Three frontends share the engine: an interactive TUI (bare `srcmgr`), the CLI
-(`srcmgr --cli …`) and a reserved GUI slot (`srcmgr --gui`, not implemented yet).
+Four frontends share the engine: a full-screen Chinese menu UI (bare `srcmgr`), the CLI
+(`srcmgr --cli …`), a typing shell (`srcmgr --shell`) and a reserved GUI slot
+(`srcmgr --gui`).  The menu UI is the product's face for people who have never used a
+terminal - it must never require typing.
 
 ## 2. Repository map
 
 ```
 srcmgr/
-  tui/             interactive frontend (prompt_toolkit): app.py REPL, completion.py
+  tui/             interactive frontends
+    app.py         full-screen menu UI (Textual) - the default, beginner-facing
+    data.py        view models + actions for the menu (lock is enforced here too)
+    i18n.py        Chinese-first message table + friendly_error()
+    sudo.py        admin prompt via SUDO_ASKPASS (no password on argv or disk)
+    shell.py       the typing REPL (srcmgr --shell)
+    completion.py  completion for the shell
   core/            engine — ecosystem agnostic, no CLI concerns
     api.py         Source/TestResult/OperationResult + ManagerPlugin/Provider contracts
     helpers.py     shared plugin building blocks (SingleValueManager, KeyValueFile, ini/…)
@@ -99,13 +107,15 @@ bin/srcmgr         run straight from a checkout
 
 ## 4. How to work here
 
-* Python ≥ 3.10, dependencies: `PyYAML` + `prompt_toolkit` (runtime), `pytest` (dev).
+* Python ≥ 3.10, dependencies: `PyYAML`, `prompt_toolkit` (shell) and `textual` (menu
+  UI); `pytest` for dev.
   Use the checkout's virtualenv: `.venv/bin/python` (created with `python3 -m venv .venv`).
 * Run the suite: `.venv/bin/python -m pytest tests/ -q` (it sets `SRCMGR_OFFLINE=1`, so it
   never touches the network; keep it that way — a real-network test cost 70 s).
 * Run the CLI from the checkout: `.venv/bin/python bin/srcmgr --cli <args>`
   (or `pip install -e .` for the `srcmgr` console script).  A bare `bin/srcmgr` opens the
-  TUI and therefore needs a real terminal.
+  menu UI and therefore needs a real terminal; `/tmp/tui_m5b.py`-style pty scripts are how
+  the UI is verified without one.
 * Hermetic CLI run:
   `SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache .venv/bin/python bin/srcmgr --cli …`
 * **Keep `PROGRESS.md` current**: it is the hand-off document. Update its
@@ -134,13 +144,15 @@ Implement `detect/list_enabled/list_available/add/remove/enable/disable/update`
 `cli/main.py` (keep the handler thin; put logic in `core/runtime.py`).  The TUI picks it
 up automatically — never duplicate a command there.
 
-## 5a. Frontends (M4): one engine, three entry points
+## 5a. Frontends: one engine, four entry points
 
 ```
-srcmgr                → TUI     (srcmgr/tui)      bare name = interactive
-srcmgr --tui          → TUI     explicit
-srcmgr --cli <args>   → CLI     the ONLY way to run one-shot commands
-srcmgr --gui          → GUI     reserved; must not be implemented piecemeal
+srcmgr                 → 菜单界面 (tui/app.py)   裸命令 = 给零基础用户的全屏菜单
+srcmgr --tui           → 菜单界面                显式
+srcmgr --shell         → REPL    (tui/shell.py)  会打字的人的界面
+srcmgr --cli <args>    → CLI                     一次性命令的唯一入口
+srcmgr --gui           → GUI                     保留位，不许半成品实现
+srcmgr --install-shortcut → 桌面图标（双击打开，不用终端）
 ```
 
 Rules:
@@ -156,8 +168,20 @@ Rules:
    `core/interaction.interactive(...)`. Never call `input()` from a handler.
 4. A frontend must never import another frontend. `srcmgr.core` must not import
    `srcmgr.cli` or `srcmgr.tui`.
-5. New user-visible strings that the TUI renders must be **plain text** (no
-   prompt_toolkit `HTML`/`ANSI` markup) — the transcript is printed, not parsed.
+5. New user-visible strings that a frontend renders must be **plain text** (no
+   prompt_toolkit/Textual markup) — the transcript is printed, not parsed.
+6. **The menu UI must stay typeless.** Every action is a key or a click; the only text
+   input allowed is the optional "type a URL" entry. If a feature needs typing, it belongs
+   in the CLI.
+7. **All user-facing strings go through `tui/i18n.py`** (`tr("key", **values)`), Chinese
+   first. Never hardcode a sentence in a widget.
+8. **A lock is a hard lock** (`core/locks.py`): while an ecosystem is locked, source
+   changes are refused everywhere - menu, one-click actions, automatic fallback. The only
+   allowed writes are `rollback`/`restore`. The UI must show the lock state constantly and
+   offer a one-click way to unlock (never a dead end).
+9. **Ask for the admin password at most once per run** (`tui/sudo.py`): retry the action
+   once after a successful login; if the system still refuses, explain in plain words.
+   Never put the password on a command line or keep it on disk.
 
 ## 6. Definition of done for any change
 

@@ -7,12 +7,13 @@ follows from that split.
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ frontends                                                                    │
-│   TUI  (srcmgr/tui)   prompt_toolkit REPL, completion, history                │
-│   CLI  (srcmgr/cli)   argparse tree, one function per command, plain tables   │
-│   GUI  (srcmgr --gui) reserved - must consume only srcmgr.core                │
+│   menu UI (tui/app.py)  Textual, Chinese, mouse; view models in tui/data.py   │
+│   shell   (tui/shell.py) prompt_toolkit REPL: runs the same CLI commands      │
+│   CLI     (srcmgr/cli)  argparse tree, one function per command               │
+│   GUI     (srcmgr --gui) reserved - must consume only srcmgr.core             │
 │                                                                              │
-│   Dispatch:  bare `srcmgr` -> TUI, `--tui` -> TUI, `--cli` -> CLI,           │
-│              `--gui` -> reserved; anything else is refused with a hint.      │
+│   Dispatch:  bare `srcmgr`/`--tui` -> menu, `--shell` -> REPL,               │
+│              `--cli` -> CLI, `--gui` -> reserved; anything else is refused.   │
 └───────────────────────────┬──────────────────────────────────────────────────┘
                             │ every frontend calls the same command handlers /
                             │ runtime; questions flow back through
@@ -119,7 +120,9 @@ Anything that drives Source Manager obeys three rules:
 3. It never imports `srcmgr.cli` from `srcmgr.core` (the dependency arrow points one way
    only: frontend → core).
 
-The TUI is the reference implementation of that contract; a GUI is the next one.
+The shell is the reference implementation of that contract; the menu UI additionally
+owns the beginner-facing rules (typeless interaction, hard locks, one admin prompt per
+run) and a GUI is the next one.
 
 ## What is deliberately *not* here
 

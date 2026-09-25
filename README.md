@@ -52,32 +52,42 @@ srcmgr managers
 `srcmgr` needs root **only** for system-wide ecosystems (APT, Docker, system Flatpak,
 Snap); every user-level ecosystem works unprivileged.
 
-## Three ways in
+## Ways in
 
 | Command | What you get |
 |---|---|
-| `srcmgr` | **interactive terminal UI** — a Claude-Code-style REPL with Tab completion, history and `:` commands |
-| `srcmgr --cli <command>` | **one-shot commands** for scripts and muscle memory |
-| `srcmgr --gui` | graphical UI — reserved for later, reports "not implemented" |
+| `srcmgr` | **全屏中文菜单界面** — 只用方向键和鼠标，不需要输入任何命令（给零基础用户） |
+| `srcmgr --shell` | 打字式交互界面（会用命令行的人用） |
+| `srcmgr --cli <command>` | 一次性命令，脚本用 |
+| `srcmgr --install-shortcut` | 在应用菜单创建"源管理器"图标，双击即可打开 |
+| `srcmgr --gui` | 图形界面，保留位（尚未实现） |
 
 ```bash
-srcmgr                                     # open the TUI (type :help inside)
-srcmgr --tui                               # same, explicit
-srcmgr --cli managers                      # one-shot: what exists here
-srcmgr --cli --json sources --available    # machine readable
+srcmgr                 # 打开菜单界面（第一次会有一段欢迎说明）
+srcmgr --install-shortcut   # 可选：创建桌面图标，以后双击打开
+srcmgr --cli managers  # 一次性命令
+srcmgr --cli --json sources --available     # 机器可读
 ```
 
-Inside the TUI you type the CLI's words without the prefix:
+菜单界面长这样（真实输出，中文）：
 
 ```
-srcmgr ❯ apt list --available --china      mirrors you could switch to
-srcmgr ❯ apt add tuna                      add it (snapshot taken automatically)
-srcmgr ❯ apt test --all                    latency / HTTP / TLS per mirror
-srcmgr ❯ apt choose                        measure, rank, pick the fastest
-srcmgr ❯ apt rollback                      undo the last change
-srcmgr ❯ health                            every ecosystem at a glance
-srcmgr ❯ :help                             full command reference
+ 软件                    现在用的是            状态              锁定
+ ⚫  APT（系统软件）        Ubuntu official      正常 · 32ms      🔓 点这里锁定
+ ⚫  Python (pip)          清华 TUNA            正常 · 96ms      🔓 点这里锁定
+ 🔒  npm（Node.js）        npmmirror            已锁定           🔒 已锁定（点击解锁）
+
+ 🩺 一键体检（测所有源的网速）   ⚡ 一键换到最快源   ↩️ 撤销上一次修改
+ 🗂 备份与还原   📋 修改记录   🔑 解锁管理员权限   🚪 退出
+
+ ↑↓ 选择   Enter 进入   鼠标可点击   L 锁定/解锁   Q 退出
 ```
+
+进去之后：选择某个软件 → 看到按网速排好序的镜像列表 → 回车即切换（切换前自动备份，
+随时可以"撤销"）。觉得某个软件已经调好了，就点它的 🔓 锁上：**锁定后任何自动操作
+（包括"一键换到最快源"）都不会再碰它**，想换的话界面会提示先解锁，并给一个"解锁并切换"
+的按钮。系统软件（APT/Docker）需要管理员密码时，界面会像 Windows 的 UAC 一样弹框询问，
+只问一次。
 
 The equivalent one-shot forms (use these in scripts):
 
@@ -100,13 +110,14 @@ Useful global flags, accepted **anywhere** after `--cli`:
 
 > **Note:** one-shot commands require `--cli`.  The pre-0.2 shorthand
 > `srcmgr apt list` now exits with an error explaining this, because a bare `srcmgr`
-> means "open the interactive UI".
+> means "open the menu UI".
 
 ## How it is built
 
 ```
-TUI (srcmgr/tui)  ┐
-CLI (srcmgr/cli)  ┼→  SourceManagerRuntime (srcmgr/core/runtime.py)
+menu UI (tui/app.py)  ┐
+shell   (tui/shell.py)┼→  SourceManagerRuntime (srcmgr/core/runtime.py)
+CLI     (srcmgr/cli)  ┘
                        ├── PluginLoader    bundled + user plugins, trust model
                        ├── SourceRegistry  merges source providers into a catalogue
                        ├── health          HTTP/TLS/native probes, scoring, cache
@@ -115,7 +126,7 @@ CLI (srcmgr/cli)  ┼→  SourceManagerRuntime (srcmgr/core/runtime.py)
                        └── Config          defaults < config.yaml < per-manager < env
                      →  ManagerPlugin implementations (srcmgr/bundled/managers/*)
 
-Both frontends call the same command handlers, and both route user questions through
+Every frontend calls the same command handlers, and both route user questions through
 `srcmgr.core.interaction`, so a future GUI is a third peer rather than a rewrite.
 See [`docs/tui.md`](docs/tui.md) and [`docs/architecture.md`](docs/architecture.md).
 
@@ -178,11 +189,11 @@ All three roots are overridable: `SRCMGR_CONFIG_HOME`, `SRCMGR_DATA_HOME`,
 
 ## Status
 
-Alpha.  The engine, interactive TUI, CLI, the health/backup/history/rollback pipeline,
-14 ecosystem manager plugins and 7 source providers (144 verified sources) are
-implemented and tested (330 tests).  A GUI is planned and already reserved at
-`srcmgr --gui`; it will consume `srcmgr.core` like the other frontends do.  See
-`PROGRESS.md` for the current milestone and what is next.
+Alpha.  The engine, the Chinese menu UI, the shell, the CLI, the
+health/backup/history/rollback pipeline, 14 ecosystem manager plugins and 7 source
+providers (144 verified sources) are implemented and tested (**368 tests**).  A GUI is
+planned and already reserved at `srcmgr --gui`; it will consume `srcmgr.core` like the
+other frontends do.  See `PROGRESS.md` for the current milestone and what is next.
 
 ## License
 

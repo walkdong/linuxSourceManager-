@@ -4,22 +4,53 @@
 > `CLAUDE.md` → `PROGRESS.md` → `git log` → the code named below, then continue from
 > the **NEXT STEP** section. Do not re-plan the project from scratch.
 
-*Last updated: 2026-09-25 (session 2 — M4 three-frontend model, 330 tests green)*
+*Last updated: 2026-09-25 (session 3 — M5 beginner menu UI + hard locks, 368 tests green)*
 *Version: 0.1.0 — GUI deliberately not started (CLI + core only).*
 
 ---
 
 ## 1. Where the project is
 
-**Phase: M4 complete — TUI + CLI frontends shipped, GUI slot reserved.**
-M3 (engine, plugins, registry, docs) is done and frozen; the current work is the
-frontend model plus whatever the *Known gaps* list still wants.
+**Phase: M5 complete — the beginner menu UI replaced the typed REPL as the default.**
+M3 (engine/plugins/registry) and M4 (frontend split) are frozen; M5 is the
+"my grandmother / a primary-school kid can use it" layer.
 
-Status: **330 tests passing**, 14 manager plugins, 7 source providers (**144 registry
-entries**, every URL HTTP-verified), three frontends (bare `srcmgr` = TUI,
-`--cli` = one-shot, `--gui` = reserved), `pip install` verified from a wheel in a clean
-venv, nothing under `/etc` ever written outside the sandboxed test roots
-(fingerprinted before/after every session).
+Status: **368 tests passing**, 14 manager plugins, 7 source providers (**144 registry
+entries**), four frontends, `pip install` verified from a wheel in a clean venv, nothing
+under `/etc` ever written outside the sandboxed test roots (fingerprinted before/after).
+
+### M5 — 面向零基础用户的中文菜单界面
+
+| Invocation | Frontend | Notes |
+|---|---|---|
+| `srcmgr` | **菜单界面** (Textual) | 全屏、鼠标可点、不需要输入任何命令 |
+| `srcmgr --tui` | 菜单界面 | 显式 |
+| `srcmgr --shell` | 打字式 REPL | M4 的界面，留给会用命令行的人 / 排错 |
+| `srcmgr --cli <cmd>` | 一次性命令 | 脚本唯一入口（`--cli` 仍是强制） |
+| `srcmgr --gui` | GUI | 保留位（exit 3） |
+| `srcmgr --install-shortcut` | 桌面图标 | 双击即可从应用菜单打开，不用碰终端 |
+
+Key design decisions (do not undo these casually):
+
+* **锁是硬锁**（用户明确要求）：`l` 键或点击即可锁定一个生态；锁定后 *任何* 修改都会被
+  拒绝 —— 手动切换、一键换最快、自动故障切换全部跳过；`rollback`/`restore` 仍允许（那是
+  逃生通道）。锁存在 `$SRCMGR_DATA_HOME/locks.json`，不在 config 里（它是状态不是配置）。
+  界面上必须**一眼看出可点、一眼看出已锁**：常驻 `🔓 点这里锁定` / `🔒 已锁定（点击解锁）`，
+  锁定行变暗，标题栏显示锁定数量，点其它镜像时弹"先解锁"对话框并提供"解锁并切换"一键出路。
+* **不动核心契约**：`runtime.add/enable/...` 仍然抛 `PermissionDenied`（CLI 退出码 4）；
+  "需要管理员密码"这个判断在 `srcmgr/tui/data.py` 里转成 `Outcome(data={"permission": True})`，
+  由界面去要密码并重试一次。每个动作**最多问一次密码**，再被拒绝就用人话解释，绝不循环弹窗。
+* **密码安全**：`srcmgr/tui/sudo.py` 用临时 `SUDO_ASKPASS` 助手，密码写进 0600 临时文件、
+  经 `SRCMGR_ASKPASS_FILE` 传入，用完立即删除；从不进 argv、不落盘长期保存。
+* **"当前源"要跟着用户意图走**：APT 可以同时启用多个源，插件自己的优先级（官方 archive 优先）
+  看不到"用户刚换到清华"这个意图，所以 `tui/data.py:last_switched_url()` 会查历史记录，
+  界面显示以用户最后一次成功切换为准。
+* **短名单而不是全量**：给初学者只测/只显示最有用的 12 个镜像（先用相关性排序：正在用的 →
+  mirror → official → 优先级 → 国家偏好），按 `a` 才显示全部。之前测 65 个 apt 源要一分钟。
+* 文案全部走 `tui/i18n.py`（中文优先，`SRCMGR_LANG=en` 可切英文，缺词条回退中文），
+  TUI 渲染的字符串必须是纯文本（不要 prompt_toolkit/Textual 标记）。
+* 报错必须"人话+下一步"：`friendly_error()` 把 sudo/timeout/证书/连接失败等翻译成中文，
+  并给出该点哪个按钮。
 
 ### M4 — frontend model (this milestone)
 
@@ -55,9 +86,10 @@ venv, nothing under `/etc` ever written outside the sandboxed test roots
 | 8 | 14 manager plugins: apt, flatpak, snap, docker, npm, yarn, pnpm, pip, cargo, go, git, maven, rubygems, conda | ✅ | `srcmgr/bundled/managers/*` |
 | 9 | Source registry: 7 providers, 144 entries, `${codename}`/`${distro}` templating, verified mirror URLs | ✅ | `srcmgr/bundled/providers/*` |
 | 10 | Plugin/source-provider marketplace flow (install/trust/uninstall/scaffold) | ✅ | `core/plugins.py`, `cli/commands.py` |
-| 11 | Tests: 330 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt archive family 16 + TUI 26) | ✅ all green | `tests/` |
+| 11 | Tests: 368 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt family 16 + shell 26 + locks 14 + menu 24) | ✅ all green | `tests/` |
 | 12 | Docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/{source-providers,architecture,operations,tui}.md`, `LICENSE` | ✅ | repo root, `docs/` |
-| 14 | **M4 frontends**: TUI (`srcmgr/tui`), `--cli` gate, `--gui` reservation, interaction seam | ✅ | `srcmgr/tui/*`, `core/interaction.py` |
+| 14 | **M4 frontends**: `--cli` gate, `--gui` reservation, interaction seam, typed REPL | ✅ | `core/interaction.py`, `tui/shell.py` |
+| 15 | **M5 菜单界面**: Textual 首页/镜像页/引导/对话框/锁/鼠标/提权，中文 i18n，桌面图标 | ✅ | `tui/app.py`, `tui/data.py`, `tui/i18n.py`, `tui/sudo.py`, `core/locks.py`, `core/shortcuts.py` |
 | 13 | `pip install -e .` + console scripts `srcmgr` / `source-manager` | ✅ verified | `pyproject.toml` |
 
 ### Bugs found and fixed this session (regression-tested)
@@ -107,6 +139,20 @@ venv, nothing under `/etc` ever written outside the sandboxed test roots
 13. History timestamps had second resolution, so rapid changes compared equal and
     `rollback` could pick the wrong entry.
 
+### M5 bugs found and fixed (regression-tested)
+
+20. APT 换源后界面仍显示"当前：官方源"——插件自身的优先级看不到用户意图；现在
+    界面查历史记录（`last_switched_url`）再决定显示哪个。
+21. 普通用户点"切换"直接弹权限错误（死路），而不是先问密码；现在会要密码并重试一次，
+    且**每个动作最多问一次**（第二次被拒绝就解释，不再弹窗）。
+22. `Config.set()` 只写文件、不更新内存视图，导致 `srcmgr config set` / 引导标记看起来没生效。
+23. 镜像列表不排序就把 65 个 apt 源全列出来、还全部去测速（一分钟）；现在先按相关性选出
+    12 个再测。
+24. `App.notify()` 的第二个位置参数是 timeout 不是 title，通知标题全错。
+25. 二级页面按 `q` 退不出去（绑定只在首页）；现在 `q` 在任何页面都能退出，弹窗里用 Esc。
+26. pyte 之外还发现：`runtime.add()` 我一度改成"返回失败而不是抛异常"，破坏了 CLI 退出码 4
+    的契约 —— 已回滚，改为在界面层捕获。
+
 ### M4 bugs found and fixed (regression-tested)
 
 14. A bare `srcmgr` in a pipe would have launched the UI: `run()` now refuses without a
@@ -137,9 +183,8 @@ venv, nothing under `/etc` ever written outside the sandboxed test roots
    path.
 3. `srcmgr apt choose` was exercised non-interactively (`--yes` picks the fastest); one
    human interactive run is still worth doing for the transcript.
-4. TUI polish backlog: a live status strip (per-ecosystem health at the bottom of the
-   screen), `--json` rendered as a collapsible view, and fuzzy history search (Ctrl-R is
-   prompt_toolkit's default search, which already works).
+4. 菜单界面打磨待办：底部实时健康状态条、把"修改记录"做成可展开详情、镜像页显示
+   "上次测速时间"、以及把 `.desktop` 图标做成自带 SVG 图标文件。
 5. **GUI**: `--gui` is reserved but unimplemented.  When it is built it must consume
    `srcmgr.core` only (never `srcmgr.cli`), install its hooks through
    `srcmgr.core.interaction.interactive(...)`, and take over the bare-`srcmgr` entry
@@ -153,10 +198,14 @@ venv, nothing under `/etc` ever written outside the sandboxed test roots
 cd /home/alnilam/Downloads/compress/outdsh/sourceManager
 .venv/bin/python -m pytest tests/ -q                       # 1. everything green?
 .venv/bin/python bin/srcmgr --cli providers list           # 2. all providers 'ok'
-.venv/bin/python bin/srcmgr --cli apt available --china    # 3. mirrors listed
-.venv/bin/python bin/srcmgr                                # 4. TUI (needs a real terminal)
-.venv/bin/python bin/srcmgr --tui --help                   # 5. the three frontends
+.venv/bin/python bin/srcmgr --cli lock                    # 3. no locks leaked by a test run
+.venv/bin/python bin/srcmgr                                # 4. 菜单界面（需要真终端）
+.venv/bin/python bin/srcmgr --tui --help                   # 5. 四种前端
+.venv/bin/python -m pyflakes srcmgr/ tests/                # 6. lint
 ```
+
+界面的手动验收（pty 脚本在 `/tmp/tui_m5b.py` 有参考）：启动→欢迎→首页→`l` 锁定→回车进镜像页→
+Esc→`q` 退出。锁定行的 🔒、`一键换最快` 跳过锁定项、普通用户提权流程都要肉眼确认一次。
 
 Note the new invocation rule: **one-shot commands need `--cli`**.  `managers`, `sources`,
 `test`, `health`, `fallback`, `history`, `backup`, `rollback`, `restore`, `plugins`,
@@ -216,6 +265,11 @@ per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
 
 ## 5. Session log (newest first)
 
+* **session 3** — M5：把默认界面换成 **Textual 中文全屏菜单**（首页状态列表 + 每生态镜像
+  选择 + 一键体检 + 一键换最快 + 硬锁 + 备份还原 + 首次引导 + 鼠标 + 中文报错引导 + 提权），
+  原 REPL 移到 `--shell`，新增 `--install-shortcut` 桌面图标；新增 `core/locks.py` 与
+  `restore_backup()`；修 7 个 bug（apt 当前源、提权死路、Config 内存不同步、镜像不排序、
+  notify 参数、二级页 q 不退出、核心契约被我误改）；测试 330 → **368**。
 * **session 2** — M4: three-frontend entry model.  Bare `srcmgr` opens a prompt_toolkit
   TUI (banner, Tab completion, history, `:` meta commands, confirmations inside the UI),
   `--cli` became mandatory for one-shot commands (old shorthand refused with a hint),
