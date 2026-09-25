@@ -22,6 +22,16 @@ if str(REPO_ROOT) not in sys.path:
 #: happened: a manual debug script that forgot to redirect $HOME left a ~/.npmrc behind).
 REAL_HOME = Path(os.path.expanduser("~")).resolve()
 
+#: Directories that must never be touched by a test run (checked by
+#: :func:`snapshot_protected`, which fingerprints them before/after).
+PROTECTED_PATHS = (
+    Path("/etc/apt"),
+    Path("/etc/docker"),
+    Path("/etc/flatpak"),
+    Path("/etc/pip.conf"),
+    Path("/etc/npmrc"),
+)
+
 
 @pytest.fixture(autouse=True)
 def _refuse_real_home():
@@ -136,11 +146,16 @@ def snapshot_protected() -> dict[str, str]:
         if not root.exists():
             digest.update(f"{root}:missing".encode())
             continue
-        if root.is_file():
-            digest.update(root.read_bytes())
-            continue
-        for path in sorted(root.rglob("*")):
-            if path.is_file():
-                digest.update(str(path).encode())
-                digest.update(path.read_bytes())
+        try:
+            if root.is_file():
+                digest.update(root.read_bytes())
+                continue
+            for path in sorted(root.rglob("*")):
+                if path.is_file():
+                    digest.update(str(path).encode())
+                    digest.update(path.read_bytes())
+        except OSError:
+            # A file we are not allowed to read (or that vanished) must not make the
+            # guard fail: record that it was unreadable instead.
+            digest.update(b"<unreadable>")
     return {"fingerprint": digest.hexdigest(), "pid": str(os.getpid())}
