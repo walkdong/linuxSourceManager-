@@ -577,14 +577,21 @@ class SourceManagerRuntime:
         expanded = template or source.url
         for key, value in values.items():
             expanded = expanded.replace("${" + key + "}", str(value))
-        if expanded != source.url:
-            unresolved = sorted(set(_PLACEHOLDER.findall(expanded)))
-            if unresolved:
-                raise SourceNotFound(
-                    f"{source.name}: unresolved placeholder(s) {', '.join(unresolved)}",
-                    hint="this provider targets a different distribution",
-                )
-            source.url = expanded
+        # Validate whatever we are about to install, not only the parts that changed: a
+        # template equal to the url ('' or the same string) used to skip this check and
+        # write a literal ``${codename}`` into the user's sources file.
+        unresolved = sorted(set(_PLACEHOLDER.findall(expanded)))
+        if unresolved:
+            plugin_name = getattr(plugin, "name", None) or type(plugin).__name__
+            raise SourceNotFound(
+                f"{source.name}: unresolved placeholder(s) {', '.join(unresolved)}",
+                hint=(
+                    "this provider targets a different distribution"
+                    if supplier
+                    else f"{plugin_name} cannot expand templates"
+                ),
+            )
+        source.url = expanded
         source.extra.pop("url_template", None)
         # Managers whose active source is a single value read it from extra["value"].
         source.extra["value"] = source.url
@@ -594,6 +601,11 @@ class SourceManagerRuntime:
         elif health_url:
             for key, value in values.items():
                 health_url = health_url.replace("${" + key + "}", str(value))
+            remaining = sorted(set(_PLACEHOLDER.findall(health_url)))
+            if remaining:
+                # A health URL that cannot be expanded would probe a literal template and
+                # report the mirror as broken; fall back to the (already valid) source URL.
+                health_url = source.url
             source.health["url"] = health_url
         return source
 

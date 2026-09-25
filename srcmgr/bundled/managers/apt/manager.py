@@ -136,8 +136,12 @@ _PRIVATE_RE = re.compile(
 DEBIAN_NONFREE_FIRMWARE = {"bookworm", "trixie", "forky", "sid", "testing", "unstable"}
 #: Debian suites that have neither ``-updates`` nor ``-security``
 DEBIAN_ROLLING = {"sid", "unstable"}
-UBUNTU_IDS = {"ubuntu", "linuxmint", "lmde", "pop", "pop-os", "elementary", "zorin", "neon", "kde-neon"}
-DEBIAN_IDS = {"debian", "raspbian", "kali", "devuan", "pureos", "parrot", "mx", "antix"}
+UBUNTU_IDS = {"ubuntu", "linuxmint", "pop", "pop-os", "elementary", "zorin", "neon", "kde-neon"}
+DEBIAN_IDS = {"debian", "lmde", "raspbian", "kali", "devuan", "pureos", "parrot", "mx", "antix"}
+
+#: Debian-family systems whose packages do NOT come from deb.debian.org.  They must never
+#: be silently mapped onto the Debian archive when a provider template is expanded.
+DISTROS_WITH_OWN_ARCHIVE = {"kali", "raspbian", "parrot"}
 
 FIELD_RE = re.compile(r"^([A-Za-z][A-Za-z0-9-]*)\s*:\s?(.*)$")
 ONE_LINE_RE = re.compile(r"^(deb-src|deb)\s+(.*)$")
@@ -708,17 +712,42 @@ class AptManager(ManagerPlugin):
         machine = platform.machine().lower()
         return [_ARCH_ALIASES.get(machine, machine or "amd64")]
 
+    def archive_family(self) -> str:
+        """The upstream archive a mirror actually serves for this system.
+
+        ``${distro}`` must be the *archive* name, not the local ``ID``: mirrors serve
+        ``/ubuntu/`` and ``/debian/`` and nothing else, so a derivative has to be mapped
+        to its parent archive or the generated URL 404s.  Non-Debian-family systems keep
+        their own id (Kali, Devuan, Parrot and friends run their own archives, and
+        guessing "debian" for them would be worse than letting the add fail loudly).
+        """
+        ident = self.distro_id()
+        if ident in UBUNTU_IDS:
+            return "ubuntu"
+        if ident in DEBIAN_IDS:
+            if ident in DISTROS_WITH_OWN_ARCHIVE:
+                # Kali and Raspbian run their own archives: pointing them at
+                # deb.debian.org would produce a plausible-looking but wrong source, so
+                # leave the id alone and let a templated add fail with a clear message.
+                return ident
+            return "debian"
+        return ident
+
     def template_values(self) -> dict[str, str]:
         """Values for provider ``url_template`` expansion (``${codename}`` ...).
 
         Public API: the core calls this when the user adds a templated source, e.g.
         ``https://mirrors.tuna.tsinghua.edu.cn/${distro}/``.
+
+        * ``${distro}`` is the archive family (``ubuntu``/``debian``), so Mint, Pop!_OS
+          and friends resolve to the archive their mirrors really host.
+        * ``${id}`` is the raw os-release ``ID`` when a provider wants the local identity.
         """
         codename = self.codename()
         arch = self.architectures()
         return {
             "codename": codename,
-            "distro": self.distro_id(),
+            "distro": self.archive_family(),
             "id": self.distro_id(),
             "id_like": self.id_like(),
             "version_id": self.version_id(),
