@@ -1,0 +1,4 @@
+deb		https://mirror.example.net/ubuntu	noble	main   universe	multiverse
+deb     [ arch=amd64,arm64   signed-by=/usr/share/keyrings/nasty.gpg ]   https://nasty.example.com/apt   stable    main
+   
+#	deb	https://commented.example.com/apt	stable	main

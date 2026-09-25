@@ -1,0 +1,9 @@
+Types: deb
+URIs: https://extra-a.example.org/debian
+Suites: trixie
+Components: main
+
+Types: deb
+URIs: https://extra-b.example.org/debian
+Suites: trixie
+Components: main

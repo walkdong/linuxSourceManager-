@@ -1,0 +1,3 @@
+# yarn 1 configuration using the `yarn config set registry --registry` spelling
+--registry "https://dashed.example.test/"
+yarn-offline-mirror "./npm-packages-offline-cache"

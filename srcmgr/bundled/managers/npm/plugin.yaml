@@ -1,0 +1,13 @@
+name: npm
+display_name: npm
+type: manager
+version: 0.1.0
+description: npm registry configuration (registry= in $HOME/.npmrc).
+scope: user
+platforms: [linux]
+requires: [npm]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - ~/.npmrc
+  - /usr/etc/npmrc
+  - /etc/npmrc

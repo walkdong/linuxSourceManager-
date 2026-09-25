@@ -1,0 +1,45 @@
+# npm-compatible registries in mainland China.  The same URL is written as the
+# `registry=` value by the npm, yarn and pnpm managers, so one entry serves all three.
+managers: [npm, yarn, pnpm]
+sources:
+  - key: npmmirror
+    name: npmmirror (Alibaba)
+    kind: mirror
+    url: https://registry.npmmirror.com
+    scope: user
+    priority: 20
+    description: >-
+      Alibaba's npmmirror, the de-facto npm mirror in China (successor of cnpm).
+      Full registry metadata plus binary/prebuild mirrors; tarball URLs are
+      rewritten to the mirror.
+    homepage: https://npmmirror.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://registry.npmmirror.com/npm
+
+  - key: tencent
+    name: Tencent Cloud npm
+    kind: mirror
+    url: https://mirrors.cloud.tencent.com/npm/
+    scope: user
+    description: >-
+      Tencent Cloud npm registry mirror; metadata verified current and tarballs
+      served from the Tencent CDN.
+    homepage: https://mirrors.cloud.tencent.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.cloud.tencent.com/npm/npm
+
+  - key: huawei
+    name: Huawei Cloud npm
+    kind: mirror
+    url: https://repo.huaweicloud.com/repository/npm/
+    scope: user
+    description: Huawei Cloud npm registry mirror.
+    homepage: https://repo.huaweicloud.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://repo.huaweicloud.com/repository/npm/npm

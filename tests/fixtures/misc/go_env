@@ -1,0 +1,5 @@
+GOFLAGS=-mod=mod
+GOPROXY=https://goproxy.cn|https://proxy.golang.org,direct
+GOSUMDB=sum.golang.org
+GOPRIVATE=*.corp.example
+GOTOOLCHAIN=local

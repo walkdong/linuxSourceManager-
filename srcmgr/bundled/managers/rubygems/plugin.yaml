@@ -1,0 +1,13 @@
+name: rubygems
+display_name: RubyGems (gem sources)
+type: manager
+version: 0.1.0
+description: >-
+  Ordered `:sources:` list in ~/.gemrc (or $GEMRC), managed through
+  `gem sources --add/--remove` when the gem binary is available.
+scope: user
+platforms: [linux]
+requires: [gem]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore]
+config_paths:
+  - ~/.gemrc

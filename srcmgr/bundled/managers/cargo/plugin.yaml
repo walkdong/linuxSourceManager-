@@ -1,0 +1,14 @@
+name: cargo
+display_name: Cargo (crates.io)
+type: manager
+version: 0.1.0
+description: >-
+  crates.io registry replacement through [source.crates-io] replace-with in
+  $CARGO_HOME/config.toml; alternative registries ([registries.*]) are listed too.
+scope: user
+platforms: [linux]
+requires: [cargo]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - ~/.cargo/config.toml
+  - ~/.cargo/config

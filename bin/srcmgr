@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+"""Run Source Manager straight from a checkout (no install required)."""
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from srcmgr.cli.main import main
+if __name__ == "__main__":
+    sys.exit(main())

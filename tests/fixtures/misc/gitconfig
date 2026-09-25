@@ -1,0 +1,15 @@
+# Ada's global git configuration -- do not reorder, tooling reads it.
+[user]
+	name = Ada Lovelace
+	email = ada@example.org
+
+[url "https://gitclone.com/github.com/"]
+	insteadOf = https://github.com/
+
+[core]
+	editor = vim
+	autocrlf = input
+
+[url "https://ghproxy.com/https://github.com/"]
+	pushInsteadOf = https://github.com/
+	insteadOf = https://raw.githubusercontent.com/

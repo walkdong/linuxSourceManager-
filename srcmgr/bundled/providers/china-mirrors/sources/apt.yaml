@@ -1,0 +1,497 @@
+# Mainland-China APT mirrors.
+#
+# Two entries per mirror:
+#   * <mirror>                 the base archive, url_template .../${distro}/ so the
+#                              same entry expands to /debian/ on Debian and /ubuntu/
+#                              on Ubuntu (apt's template_values() supplies the value).
+#   * <mirror>-debian-security Debian-only: <codename>-security lives in the separate
+#                              /debian-security/ archive, never inside /debian/.
+#
+# `components` is deliberately NOT set on the base entries: apt fills in the default
+# set for the local family (Debian: main contrib non-free non-free-firmware,
+# Ubuntu: main restricted universe multiverse), so one entry is correct on both.
+# The Debian-security entries do carry the Debian component set.
+managers: [apt]
+sources:
+  - key: tuna
+    name: TUNA (Tsinghua)
+    kind: mirror
+    url_template: https://mirrors.tuna.tsinghua.edu.cn/${distro}/
+    url: https://mirrors.tuna.tsinghua.edu.cn/debian/
+    types: [deb]
+    scope: system
+    priority: 20
+    description: >-
+      Tsinghua University TUNA mirror: full Debian and Ubuntu archives, usually the
+      most complete and one of the fastest mirrors in mainland China.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.tuna.tsinghua.edu.cn/debian/dists/stable/Release
+        - https://mirrors.tuna.tsinghua.edu.cn/ubuntu/dists/noble/Release
+
+  - key: tuna-debian-security
+    name: TUNA Debian security
+    kind: mirror
+    url: https://mirrors.tuna.tsinghua.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 20
+    description: >-
+      TUNA mirror of the Debian security archive (<codename>-security).  Debian
+      only; Ubuntu security is part of the normal ubuntu/ archive.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: ustc
+    name: USTC (Hefei)
+    kind: mirror
+    url_template: https://mirrors.ustc.edu.cn/${distro}/
+    url: https://mirrors.ustc.edu.cn/debian/
+    types: [deb]
+    scope: system
+    priority: 20
+    description: >-
+      University of Science and Technology of China mirror: full Debian and Ubuntu
+      archives with excellent connectivity from eastern and central China.
+    homepage: https://mirrors.ustc.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.ustc.edu.cn/debian/dists/stable/Release
+        - https://mirrors.ustc.edu.cn/ubuntu/dists/noble/Release
+
+  - key: ustc-debian-security
+    name: USTC Debian security
+    kind: mirror
+    url: https://mirrors.ustc.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 20
+    description: USTC mirror of the Debian security archive (<codename>-security).
+    homepage: https://mirrors.ustc.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.ustc.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: aliyun
+    name: Aliyun (Alibaba Cloud)
+    kind: mirror
+    url_template: https://mirrors.aliyun.com/${distro}/
+    url: https://mirrors.aliyun.com/debian/
+    types: [deb]
+    scope: system
+    priority: 10
+    description: >-
+      Alibaba Cloud public mirror: Debian and Ubuntu archives on a commercial CDN,
+      fast from most Chinese networks.
+    homepage: https://mirrors.aliyun.com/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.aliyun.com/debian/dists/stable/Release
+        - https://mirrors.aliyun.com/ubuntu/dists/noble/Release
+
+  - key: aliyun-debian-security
+    name: Aliyun Debian security
+    kind: mirror
+    url: https://mirrors.aliyun.com/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 10
+    description: Aliyun mirror of the Debian security archive (<codename>-security).
+    homepage: https://mirrors.aliyun.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.aliyun.com/debian-security/dists/stable-security/Release
+
+  - key: tencent
+    name: Tencent Cloud
+    kind: mirror
+    url_template: https://mirrors.cloud.tencent.com/${distro}/
+    url: https://mirrors.cloud.tencent.com/debian/
+    types: [deb]
+    scope: system
+    priority: 10
+    description: >-
+      Tencent Cloud public mirror: Debian and Ubuntu archives, very fast for hosts
+      inside Tencent Cloud and good elsewhere in China.
+    homepage: https://mirrors.cloud.tencent.com/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.cloud.tencent.com/debian/dists/stable/Release
+        - https://mirrors.cloud.tencent.com/ubuntu/dists/noble/Release
+
+  - key: tencent-debian-security
+    name: Tencent Cloud Debian security
+    kind: mirror
+    url: https://mirrors.cloud.tencent.com/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 10
+    description: Tencent Cloud mirror of the Debian security archive.
+    homepage: https://mirrors.cloud.tencent.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.cloud.tencent.com/debian-security/dists/stable-security/Release
+
+  - key: huawei
+    name: Huawei Cloud
+    kind: mirror
+    url_template: https://repo.huaweicloud.com/${distro}/
+    url: https://repo.huaweicloud.com/debian/
+    types: [deb]
+    scope: system
+    priority: 10
+    description: >-
+      Huawei Cloud public mirror: Debian and Ubuntu archives; fast inside Huawei
+      Cloud and on many Chinese campus networks.
+    homepage: https://repo.huaweicloud.com/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://repo.huaweicloud.com/debian/dists/stable/Release
+        - https://repo.huaweicloud.com/ubuntu/dists/noble/Release
+
+  - key: huawei-debian-security
+    name: Huawei Cloud Debian security
+    kind: mirror
+    url: https://repo.huaweicloud.com/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 10
+    description: Huawei Cloud mirror of the Debian security archive.
+    homepage: https://repo.huaweicloud.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://repo.huaweicloud.com/debian-security/dists/stable-security/Release
+
+  - key: sjtu
+    name: SJTU (Shanghai Jiao Tong University)
+    kind: mirror
+    url_template: https://mirror.sjtu.edu.cn/${distro}/
+    url: https://mirror.sjtu.edu.cn/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      Shanghai Jiao Tong University mirror: Debian and Ubuntu archives, strong in the
+      Shanghai / Yangtze delta region.
+    homepage: https://mirror.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirror.sjtu.edu.cn/debian/dists/stable/Release
+        - https://mirror.sjtu.edu.cn/ubuntu/dists/noble/Release
+
+  - key: sjtu-debian-security
+    name: SJTU Debian security
+    kind: mirror
+    url: https://mirror.sjtu.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: SJTU mirror of the Debian security archive.
+    homepage: https://mirror.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirror.sjtu.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: sjtug
+    name: SJTUG (SJTU *nix user group)
+    kind: mirror
+    url_template: https://mirrors.sjtug.sjtu.edu.cn/${distro}/
+    url: https://mirrors.sjtug.sjtu.edu.cn/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      SJTUG mirror run by the SJTU *nix user group: same university as the SJTU
+      entry but a different host, useful as a second Shanghai fallback.
+    homepage: https://mirrors.sjtug.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.sjtug.sjtu.edu.cn/debian/dists/stable/Release
+        - https://mirrors.sjtug.sjtu.edu.cn/ubuntu/dists/noble/Release
+
+  - key: sjtug-debian-security
+    name: SJTUG Debian security
+    kind: mirror
+    url: https://mirrors.sjtug.sjtu.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: SJTUG mirror of the Debian security archive.
+    homepage: https://mirrors.sjtug.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.sjtug.sjtu.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: nju
+    name: NJU (Nanjing University)
+    kind: mirror
+    url_template: https://mirrors.nju.edu.cn/${distro}/
+    url: https://mirrors.nju.edu.cn/debian/
+    types: [deb]
+    scope: system
+    priority: 5
+    description: >-
+      Nanjing University mirror: Debian (including security) and Ubuntu archives;
+      also serves as the anaconda backend for other CERNET mirrors.
+    homepage: https://mirrors.nju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.nju.edu.cn/debian/dists/stable/Release
+        - https://mirrors.nju.edu.cn/ubuntu/dists/noble/Release
+
+  - key: nju-debian-security
+    name: NJU Debian security
+    kind: mirror
+    url: https://mirrors.nju.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 5
+    description: NJU mirror of the Debian security archive.
+    homepage: https://mirrors.nju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.nju.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: bfsu
+    name: BFSU (Beijing Foreign Studies University)
+    kind: mirror
+    url_template: https://mirrors.bfsu.edu.cn/${distro}/
+    url: https://mirrors.bfsu.edu.cn/debian/
+    types: [deb]
+    scope: system
+    priority: 5
+    description: >-
+      BFSU mirror: Debian (including security) and Ubuntu archives; strong from
+      Beijing and northern China.  Some non-apt content (anaconda, Go modules)
+      redirects to TUNA.
+    homepage: https://mirrors.bfsu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.bfsu.edu.cn/debian/dists/stable/Release
+        - https://mirrors.bfsu.edu.cn/ubuntu/dists/noble/Release
+
+  - key: bfsu-debian-security
+    name: BFSU Debian security
+    kind: mirror
+    url: https://mirrors.bfsu.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 5
+    description: BFSU mirror of the Debian security archive.
+    homepage: https://mirrors.bfsu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.bfsu.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: netease
+    name: NetEase (163)
+    kind: mirror
+    url_template: https://mirrors.163.com/${distro}/
+    url: https://mirrors.163.com/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      NetEase (163.com) public mirror: Debian (including security) and Ubuntu
+      archives.  (The provider key is "netease", not "163", because a purely numeric
+      selector is read as a list index by the CLI.)
+    homepage: https://mirrors.163.com/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.163.com/debian/dists/stable/Release
+        - https://mirrors.163.com/ubuntu/dists/noble/Release
+
+  - key: netease-debian-security
+    name: NetEase (163) Debian security
+    kind: mirror
+    url: https://mirrors.163.com/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: NetEase mirror of the Debian security archive.
+    homepage: https://mirrors.163.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.163.com/debian-security/dists/stable-security/Release
+
+  - key: cernet
+    name: CERNET anycast
+    kind: mirror
+    url_template: https://mirrors.cernet.edu.cn/${distro}/
+    url: https://mirrors.cernet.edu.cn/debian/
+    types: [deb]
+    scope: system
+    priority: 5
+    description: >-
+      CERNET mirror service: an anycast/redirecting front end that hands the request
+      to a nearby member mirror (NJU, TUNA, SYSU, ...).  Great as a "wherever I am
+      in China" fallback; the measured latency includes the redirect hop.
+    homepage: https://mirrors.cernet.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.cernet.edu.cn/debian/dists/stable/Release
+        - https://mirrors.cernet.edu.cn/ubuntu/dists/noble/Release
+
+  - key: cernet-debian-security
+    name: CERNET anycast Debian security
+    kind: mirror
+    url: https://mirrors.cernet.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    priority: 5
+    description: CERNET anycast entry for the Debian security archive.
+    homepage: https://mirrors.cernet.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.cernet.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: zju
+    name: ZJU (Zhejiang University)
+    kind: mirror
+    url_template: https://mirrors.zju.edu.cn/${distro}/
+    url: https://mirrors.zju.edu.cn/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      Zhejiang University mirror: Debian (including security) and Ubuntu archives,
+      fast in the Hangzhou / east China region.
+    homepage: https://mirrors.zju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.zju.edu.cn/debian/dists/stable/Release
+        - https://mirrors.zju.edu.cn/ubuntu/dists/noble/Release
+
+  - key: zju-debian-security
+    name: ZJU Debian security
+    kind: mirror
+    url: https://mirrors.zju.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: ZJU mirror of the Debian security archive.
+    homepage: https://mirrors.zju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.zju.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: pku
+    name: PKU (Peking University)
+    kind: mirror
+    url_template: https://mirrors.pku.edu.cn/${distro}/
+    url: https://mirrors.pku.edu.cn/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      Peking University mirror: Debian (including security) and Ubuntu archives for
+      Beijing and the surrounding campus networks.
+    homepage: https://mirrors.pku.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.pku.edu.cn/debian/dists/stable/Release
+        - https://mirrors.pku.edu.cn/ubuntu/dists/noble/Release
+
+  - key: pku-debian-security
+    name: PKU Debian security
+    kind: mirror
+    url: https://mirrors.pku.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: PKU mirror of the Debian security archive.
+    homepage: https://mirrors.pku.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.pku.edu.cn/debian-security/dists/stable-security/Release
+
+  - key: sustech
+    name: SUSTech (Shenzhen)
+    kind: mirror
+    url_template: https://mirrors.sustech.edu.cn/${distro}/
+    url: https://mirrors.sustech.edu.cn/debian/
+    types: [deb]
+    scope: system
+    description: >-
+      Southern University of Science and Technology mirror: Debian (including
+      security) and Ubuntu archives in Shenzhen / the Pearl River delta.
+    homepage: https://mirrors.sustech.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      urls:
+        - https://mirrors.sustech.edu.cn/debian/dists/stable/Release
+        - https://mirrors.sustech.edu.cn/ubuntu/dists/noble/Release
+
+  - key: sustech-debian-security
+    name: SUSTech Debian security
+    kind: mirror
+    url: https://mirrors.sustech.edu.cn/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: SUSTech mirror of the Debian security archive.
+    homepage: https://mirrors.sustech.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.sustech.edu.cn/debian-security/dists/stable-security/Release

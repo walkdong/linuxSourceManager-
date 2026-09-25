@@ -1,0 +1,12 @@
+name: debian-official
+display_name: Debian official archives
+type: provider
+version: 0.1.0
+description: >-
+  Stock Debian archives for APT: deb.debian.org (base, updates, backports) and the
+  separate security archive on security.debian.org.
+author: Source Manager contributors
+license: MIT
+homepage: https://www.debian.org/mirror/list
+managers: [apt]
+sources_dir: sources

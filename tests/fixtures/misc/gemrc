@@ -1,0 +1,7 @@
+---
+:backtrace: false
+:verbose: true
+:sources:
+- https://rubygems.org/
+- https://gems.example.org/
+gem: --no-document

@@ -1,0 +1,14 @@
+name: china-mirrors
+display_name: China mirrors
+type: provider
+version: 0.1.0
+description: >-
+  Mainland-China public mirrors for apt, npm/yarn/pnpm, pip, cargo, Go, Docker,
+  Flatpak, Git, Maven, RubyGems and Conda.  Every URL was verified with a real
+  request; entries whose operators stopped publishing a mirror are deliberately
+  absent (see the notes in each source file).
+author: Source Manager contributors
+license: MIT
+homepage: https://mirrors.cernet.edu.cn/
+managers: [apt, npm, yarn, pnpm, pip, cargo, go, docker, flatpak, git, maven, rubygems, conda]
+sources_dir: sources

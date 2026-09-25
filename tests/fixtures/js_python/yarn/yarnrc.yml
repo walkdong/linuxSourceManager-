@@ -1,0 +1,17 @@
+# Yarn 2+ configuration - comments, quoting and nested blocks must survive edits
+yarnPath: .yarn/releases/yarn-4.1.1.cjs
+nodeLinker: node-modules
+
+npmRegistryServer: "https://registry.npmmirror.com"
+
+npmScopes:
+  myco:
+    npmRegistryServer: "https://npm.myco.example/"
+    npmAlwaysAuth: true
+  other:
+    npmRegistryServer: 'https://npm.other.example'
+
+unsafeHttpWhitelist:
+  - "npm.myco.example"
+
+# trailing comment

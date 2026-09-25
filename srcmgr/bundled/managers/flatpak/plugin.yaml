@@ -1,0 +1,17 @@
+name: flatpak
+display_name: Flatpak
+type: manager
+version: 0.1.0
+description: >-
+  Flatpak remotes of both the system and the user installation, read and modified
+  through the flatpak CLI.
+author: Source Manager
+license: MIT
+scope: system
+platforms: [linux]
+requires: [flatpak]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - /etc/flatpak/remotes.d/*.flatpakrepo
+  - /var/lib/flatpak/repo/config
+  - ~/.local/share/flatpak/repo/config

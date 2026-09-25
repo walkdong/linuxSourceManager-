@@ -1,0 +1,15 @@
+# Cargo configuration for this workstation -- the comments matter, keep them.
+[net]
+retry = 3
+
+[source.crates-io]
+replace-with = "ustc"
+
+[source.ustc]
+registry = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/"
+
+[registries.insecure-corp]
+index = "sparse+https://crates.corp.example/index/"
+
+[build]
+jobs = 4

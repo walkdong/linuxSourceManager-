@@ -1,0 +1,5 @@
+# yarn 1 ("classic") configuration - space separated value
+registry "https://registry.npmmirror.com"
+--install.silent true
+always-auth false
+lastUpdateCheck 1699999999999

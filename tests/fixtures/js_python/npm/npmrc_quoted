@@ -1,0 +1,7 @@
+# npm user configuration - comments and blank lines must survive every edit
+registry="https://registry.npmmirror.com/"
+
+; semicolon comments are comments too
+@myscope:registry=https://npm.pkg.github.com/
+always-auth=false
+fund=false

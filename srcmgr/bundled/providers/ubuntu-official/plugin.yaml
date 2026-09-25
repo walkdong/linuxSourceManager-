@@ -1,0 +1,12 @@
+name: ubuntu-official
+display_name: Ubuntu official archives
+type: provider
+version: 0.1.0
+description: >-
+  Stock Ubuntu archives for APT: archive.ubuntu.com, security.ubuntu.com, the
+  Canonical China CDN and ports.ubuntu.com for non-x86 architectures.
+author: Source Manager contributors
+license: MIT
+homepage: https://archive.ubuntu.com/ubuntu/
+managers: [apt]
+sources_dir: sources

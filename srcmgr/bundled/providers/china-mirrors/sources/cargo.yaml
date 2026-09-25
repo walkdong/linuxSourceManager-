@@ -1,0 +1,92 @@
+# crates.io sparse-index mirrors in mainland China.  The `sparse+` prefix is part of
+# the value Cargo needs in config.toml, so it is part of `url`; the health URL drops
+# the prefix because the probe only speaks http(s) and reads the index's config.json.
+managers: [cargo]
+sources:
+  - key: tuna
+    name: TUNA (Tsinghua)
+    kind: mirror
+    url: sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/
+    scope: user
+    priority: 10
+    description: Tsinghua TUNA crates.io sparse index mirror.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/crates.io-index/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/config.json
+
+  - key: ustc
+    name: USTC (Hefei)
+    kind: mirror
+    url: sparse+https://mirrors.ustc.edu.cn/crates.io-index/
+    scope: user
+    description: USTC crates.io sparse index mirror.
+    homepage: https://mirrors.ustc.edu.cn/help/crates.io-index.html
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.ustc.edu.cn/crates.io-index/config.json
+
+  - key: aliyun
+    name: Aliyun (Alibaba Cloud)
+    kind: mirror
+    url: sparse+https://mirrors.aliyun.com/crates.io-index/
+    scope: user
+    description: Alibaba Cloud crates.io sparse index mirror.
+    homepage: https://developer.aliyun.com/mirror/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.aliyun.com/crates.io-index/config.json
+
+  - key: rsproxy
+    name: rsproxy.cn
+    kind: mirror
+    url: sparse+https://rsproxy.cn/index/
+    scope: user
+    priority: 20
+    description: >-
+      rsproxy.cn, the Rust community's own China mirror for the crates.io sparse
+      index (also mirrors rustup distributions).
+    homepage: https://rsproxy.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://rsproxy.cn/index/config.json
+
+  - key: sjtug
+    name: SJTUG (SJTU)
+    kind: mirror
+    url: sparse+https://mirrors.sjtug.sjtu.edu.cn/crates.io-index/
+    scope: user
+    description: SJTUG crates.io sparse index mirror.
+    homepage: https://mirrors.sjtug.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.sjtug.sjtu.edu.cn/crates.io-index/config.json
+
+  - key: nju
+    name: NJU (Nanjing University)
+    kind: mirror
+    url: sparse+https://mirrors.nju.edu.cn/crates.io-index/
+    scope: user
+    description: NJU crates.io sparse index mirror.
+    homepage: https://mirrors.nju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.nju.edu.cn/crates.io-index/config.json
+
+  - key: bfsu
+    name: BFSU (Beijing)
+    kind: mirror
+    url: sparse+https://mirrors.bfsu.edu.cn/crates.io-index/
+    scope: user
+    description: BFSU crates.io sparse index mirror.
+    homepage: https://mirrors.bfsu.edu.cn/help/crates.io-index/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.bfsu.edu.cn/crates.io-index/config.json

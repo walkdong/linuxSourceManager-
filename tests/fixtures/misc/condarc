@@ -1,0 +1,13 @@
+# conda configuration for the workstation -- unrelated keys must survive edits.
+channels:
+  - conda-forge
+  - defaults
+channel_alias: https://conda.anaconda.org
+default_channels:
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+custom_channels:
+  bioconda: https://conda.anaconda.org
+ssl_verify: true
+pkgs_dirs:
+  - /opt/conda/pkgs

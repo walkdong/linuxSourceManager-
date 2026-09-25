@@ -1,0 +1,13 @@
+name: maven
+display_name: Maven (settings.xml mirrors)
+type: manager
+version: 0.1.0
+description: >-
+  <mirror> entries in ~/.m2/settings.xml, including <mirrorOf> matching for the
+  central repository. Edited as text so comments and foreign sections survive.
+scope: user
+platforms: [linux]
+requires: [mvn]
+supports: [detect, list, current, test, add, remove, enable, disable, update, backup, restore]
+config_paths:
+  - ~/.m2/settings.xml

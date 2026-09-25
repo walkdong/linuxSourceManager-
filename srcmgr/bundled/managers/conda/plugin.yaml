@@ -1,0 +1,13 @@
+name: conda
+display_name: Conda (channels)
+type: manager
+version: 0.1.0
+description: >-
+  Ordered `channels:` list and `channel_alias:` in ~/.condarc (or $SRCMGR_CONDA_RC);
+  unrelated keys such as ssl_verify and custom_channels are preserved.
+scope: user
+platforms: [linux]
+requires: [conda]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore]
+config_paths:
+  - ~/.condarc

@@ -1,0 +1,26 @@
+# Third-party repositories, kept as deb822 with an inline signing key.
+
+Types: deb
+URIs: https://mirrors.example.org/debian
+Suites: trixie trixie-updates
+Components: main contrib
+Signed-By: /usr/share/keyrings/example.gpg
+Architectures: amd64 arm64
+
+Types: deb deb-src
+URIs: https://repo.example.net/apt
+Suites: stable
+Components: main
+Signed-By:
+ -----BEGIN PGP PUBLIC KEY BLOCK-----
+ .
+ mQINBGexamplebase64line000000000000000000000000000000000000000000
+ mQINBGexamplebase64line111111111111111111111111111111111111111111
+ =abcd
+ -----END PGP PUBLIC KEY BLOCK-----
+
+Enabled: no
+Types: deb
+URIs: https://disabled.example.net/apt
+Suites: testing
+Components: main

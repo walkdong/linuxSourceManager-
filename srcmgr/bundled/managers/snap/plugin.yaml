@@ -1,0 +1,17 @@
+name: snap
+display_name: Snap
+type: manager
+version: 0.1.0
+description: >-
+  The snap store / proxy snapd fetches snaps from; snap has no per-source list, so
+  this manager exposes the single active store or proxy as one source.
+author: Source Manager
+license: MIT
+scope: system
+platforms: [linux]
+requires: [snap]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - /var/lib/snapd/snapd.conf
+  - /etc/snapd.conf
+  - /etc/environment

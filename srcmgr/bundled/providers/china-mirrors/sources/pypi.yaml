@@ -1,0 +1,107 @@
+# PyPI mirrors in mainland China.  The URL becomes pip's index-url value.
+# Note the path differences: BFSU, NJU and SJTU publish pip under /pypi/web/simple,
+# USTC under /pypi/simple — both spellings were verified with a real request.
+managers: [pip]
+sources:
+  - key: tuna
+    name: TUNA (Tsinghua)
+    kind: mirror
+    url: https://pypi.tuna.tsinghua.edu.cn/simple
+    scope: user
+    priority: 20
+    description: >-
+      Tsinghua TUNA PyPI mirror (pypi.tuna.tsinghua.edu.cn) — the classic default for
+      Chinese Python users.
+    homepage: https://mirrors.tuna.tsinghua.edu.cn/help/pypi/
+    extra:
+      countries: [cn]
+    health:
+      url: https://pypi.tuna.tsinghua.edu.cn/simple/pip/
+
+  - key: ustc
+    name: USTC (Hefei)
+    kind: mirror
+    url: https://mirrors.ustc.edu.cn/pypi/simple
+    scope: user
+    priority: 10
+    description: USTC PyPI mirror.
+    homepage: https://mirrors.ustc.edu.cn/help/pypi.html
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.ustc.edu.cn/pypi/simple/pip/
+
+  - key: aliyun
+    name: Aliyun (Alibaba Cloud)
+    kind: mirror
+    url: https://mirrors.aliyun.com/pypi/simple/
+    scope: user
+    priority: 10
+    description: Alibaba Cloud PyPI mirror.
+    homepage: https://developer.aliyun.com/mirror/pypi
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.aliyun.com/pypi/simple/pip/
+
+  - key: tencent
+    name: Tencent Cloud
+    kind: mirror
+    url: https://mirrors.cloud.tencent.com/pypi/simple
+    scope: user
+    description: Tencent Cloud PyPI mirror.
+    homepage: https://mirrors.cloud.tencent.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.cloud.tencent.com/pypi/simple/pip/
+
+  - key: huawei
+    name: Huawei Cloud
+    kind: mirror
+    url: https://repo.huaweicloud.com/repository/pypi/simple
+    scope: user
+    description: Huawei Cloud PyPI mirror.
+    homepage: https://repo.huaweicloud.com/repository/pypi/
+    extra:
+      countries: [cn]
+    health:
+      url: https://repo.huaweicloud.com/repository/pypi/simple/pip/
+
+  - key: bfsu
+    name: BFSU (Beijing)
+    kind: mirror
+    url: https://mirrors.bfsu.edu.cn/pypi/web/simple
+    scope: user
+    description: >-
+      BFSU PyPI mirror.  pip lives under /pypi/web/simple here; /pypi/simple does
+      not exist.
+    homepage: https://mirrors.bfsu.edu.cn/help/pypi/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.bfsu.edu.cn/pypi/web/simple/pip/
+
+  - key: nju
+    name: NJU (Nanjing University)
+    kind: mirror
+    url: https://mirrors.nju.edu.cn/pypi/web/simple
+    scope: user
+    description: NJU PyPI mirror (path is /pypi/web/simple).
+    homepage: https://mirrors.nju.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.nju.edu.cn/pypi/web/simple/pip/
+
+  - key: sjtu
+    name: SJTU (Shanghai)
+    kind: mirror
+    url: https://mirror.sjtu.edu.cn/pypi/web/simple
+    scope: user
+    description: SJTU PyPI mirror (path is /pypi/web/simple).
+    homepage: https://mirror.sjtu.edu.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirror.sjtu.edu.cn/pypi/web/simple/pip/

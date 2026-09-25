@@ -1,0 +1,17 @@
+name: apt
+display_name: APT
+type: manager
+version: 0.1.0
+description: Debian/Ubuntu APT repositories (one-line and deb822 formats).
+author: Source Manager
+license: MIT
+scope: system
+platforms: [debian, ubuntu, linuxmint, pop, raspbian, linux]
+requires: [apt-get]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - /etc/apt/sources.list
+  - /etc/apt/sources.list.d/*.list
+  - /etc/apt/sources.list.d/*.sources
+  - /etc/apt/sources.list.d/*.list.disabled
+  - /etc/apt/sources.list.d/*.sources.disabled

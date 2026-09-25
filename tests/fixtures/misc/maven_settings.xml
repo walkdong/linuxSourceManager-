@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-maintained settings; comments and extra sections must survive edits. -->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>corp-releases</id>
+      <username>ada</username>
+      <password>s3cret</password>
+    </server>
+  </servers>
+
+  <mirrors>
+    <!-- the corporate mirror is mandatory here -->
+    <mirror>
+      <id>corp</id>
+      <name>Corp Central</name>
+      <url>https://nexus.corp.example/repository/maven-public/</url>
+      <mirrorOf>central</mirrorOf>
+    </mirror>
+  </mirrors>
+
+  <profiles>
+    <profile>
+      <id>jdk17</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+    </profile>
+  </profiles>
+</settings>

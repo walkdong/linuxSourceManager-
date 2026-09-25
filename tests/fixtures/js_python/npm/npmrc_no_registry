@@ -1,0 +1,4 @@
+# no registry key here: the `npm config get registry` fallback must be used
+fund=false
+
+audit-level=high

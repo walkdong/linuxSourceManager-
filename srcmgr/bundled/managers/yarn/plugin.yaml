@@ -1,0 +1,12 @@
+name: yarn
+display_name: Yarn
+type: manager
+version: 0.1.0
+description: Yarn registry configuration (classic .yarnrc and berry .yarnrc.yml).
+scope: user
+platforms: [linux]
+requires: [yarn]
+supports: [detect, list, current, test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - ~/.yarnrc
+  - ~/.yarnrc.yml

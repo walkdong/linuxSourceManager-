@@ -1,0 +1,3 @@
+flathub	Flathub	https://dl.flathub.org/repo/	-	-	-	1	system	Central repository of Flatpak applications	Central repository of Flatpak applications	https://flathub.org/	https://dl.flathub.org/repo/logo.svg
+legacy-vendor	-	https://flatpak.example.com/repo	-	-	-	20	disabled	-	-	-	-
+ustc-flathub	USTC mirror	https://mirrors.ustc.edu.cn/flathub	-	-	-	5	user,no-gpg-verify	-	-	-	-

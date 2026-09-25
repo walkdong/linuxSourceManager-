@@ -1,0 +1,6 @@
+{
+  "proxy": {
+    "https": "http://proxy.example.com:3128",
+    "http": "http://proxy.example.com:3128"
+  }
+}

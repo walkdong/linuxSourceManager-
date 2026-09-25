@@ -1,0 +1,118 @@
+# Official Ubuntu archives.  Unlike Debian there is no separate security path: the
+# <codename>-security suite is published inside /ubuntu/ as well, and
+# security.ubuntu.com/ubuntu is the same content on a dedicated host.
+managers: [apt]
+sources:
+  - key: ubuntu
+    name: Ubuntu (archive.ubuntu.com)
+    kind: official
+    url: https://archive.ubuntu.com/ubuntu/
+    suite: ${codename}
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: >-
+      Official Ubuntu base archive; the suite resolves to this machine's codename
+      (noble, resolute, ...).
+    homepage: https://archive.ubuntu.com/ubuntu/
+    health:
+      url: https://archive.ubuntu.com/ubuntu/dists/noble/Release
+
+  - key: ubuntu-updates
+    name: Ubuntu updates
+    kind: official
+    url: https://archive.ubuntu.com/ubuntu/
+    suite: ${codename}-updates
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: Official Ubuntu <codename>-updates suite (stable release updates).
+    homepage: https://archive.ubuntu.com/ubuntu/
+    health:
+      url: https://archive.ubuntu.com/ubuntu/dists/noble-updates/Release
+
+  - key: ubuntu-backports
+    name: Ubuntu backports
+    kind: official
+    url: https://archive.ubuntu.com/ubuntu/
+    suite: ${codename}-backports
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: Official Ubuntu <codename>-backports suite (not enabled by default).
+    homepage: https://archive.ubuntu.com/ubuntu/
+    health:
+      url: https://archive.ubuntu.com/ubuntu/dists/noble-backports/Release
+
+  - key: ubuntu-security
+    name: Ubuntu security
+    kind: official
+    url: https://security.ubuntu.com/ubuntu/
+    suite: ${codename}-security
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: >-
+      Official Ubuntu security archive (<codename>-security).  Since 24.04 the same
+      suite is also published on archive.ubuntu.com, so either URL works.
+    homepage: https://security.ubuntu.com/ubuntu/
+    health:
+      url: https://security.ubuntu.com/ubuntu/dists/noble-security/Release
+
+  - key: ubuntu-cn
+    name: Ubuntu China CDN (cn.archive.ubuntu.com)
+    kind: official
+    url: https://cn.archive.ubuntu.com/ubuntu/
+    suite: ${codename}
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: >-
+      Canonical's official Ubuntu archive for mainland China.  Use it as a static,
+      vendor-run alternative to the university mirrors when travelling.
+    homepage: https://cn.archive.ubuntu.com/ubuntu/
+    extra:
+      countries: [cn]
+    health:
+      url: https://cn.archive.ubuntu.com/ubuntu/dists/noble/Release
+
+  - key: ubuntu-ports
+    name: Ubuntu ports (non-x86)
+    kind: official
+    url: https://ports.ubuntu.com/ubuntu-ports/
+    suite: ${codename}
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: >-
+      Official Ubuntu archive for non-x86 architectures (arm64, armhf, riscv64,
+      ppc64el, s390x).  x86 machines must keep using archive.ubuntu.com.
+    homepage: https://ports.ubuntu.com/ubuntu-ports/
+    health:
+      url: https://ports.ubuntu.com/ubuntu-ports/dists/noble/Release
+
+  - key: ubuntu-ports-updates
+    name: Ubuntu ports updates (non-x86)
+    kind: official
+    url: https://ports.ubuntu.com/ubuntu-ports/
+    suite: ${codename}-updates
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: Official <codename>-updates suite for non-x86 architectures.
+    homepage: https://ports.ubuntu.com/ubuntu-ports/
+    health:
+      url: https://ports.ubuntu.com/ubuntu-ports/dists/noble-updates/Release
+
+  - key: ubuntu-ports-security
+    name: Ubuntu ports security (non-x86)
+    kind: official
+    url: https://ports.ubuntu.com/ubuntu-ports/
+    suite: ${codename}-security
+    components: [main, restricted, universe, multiverse]
+    types: [deb]
+    scope: system
+    description: Official <codename>-security suite for non-x86 architectures.
+    homepage: https://ports.ubuntu.com/ubuntu-ports/
+    health:
+      url: https://ports.ubuntu.com/ubuntu-ports/dists/noble-security/Release

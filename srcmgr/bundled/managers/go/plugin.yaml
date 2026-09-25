@@ -1,0 +1,13 @@
+name: go
+display_name: Go modules (GOPROXY)
+type: manager
+version: 0.1.0
+description: >-
+  GOPROXY fallback list for the Go module toolchain, stored in the file
+  `go env -w` writes ($GOENV, default ~/.config/go/env).
+scope: user
+platforms: [linux]
+requires: [go]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - ~/.config/go/env

@@ -1,0 +1,3 @@
+# npmrc keys are case-insensitive
+Registry = https://registry.example.test/npm/
+audit-level=high

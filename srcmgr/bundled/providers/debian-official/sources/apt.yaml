@@ -1,0 +1,68 @@
+# Official Debian archives.  The suite is templated with ${codename} so one entry
+# works on every release; apt expands it at add time (see docs/source-providers.md).
+#
+# Debian splits its repositories: the base archive, <codename>-updates and
+# <codename>-backports live on deb.debian.org/debian, while security updates live on
+# the separate security.debian.org/debian-security archive.  deb.debian.org/debian
+# does NOT carry <codename>-security, which is why security is a separate entry.
+managers: [apt]
+sources:
+  - key: debian
+    name: Debian (deb.debian.org)
+    kind: official
+    url: https://deb.debian.org/debian/
+    suite: ${codename}
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: >-
+      Official Debian base archive behind the global deb.debian.org CDN; the suite
+      resolves to this machine's codename (trixie, forky, sid, ...).
+    homepage: https://www.debian.org/
+    health:
+      url: https://deb.debian.org/debian/dists/stable/Release
+
+  - key: debian-updates
+    name: Debian updates (deb.debian.org)
+    kind: official
+    url: https://deb.debian.org/debian/
+    suite: ${codename}-updates
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: >-
+      Official Debian <codename>-updates suite (point-release updates that are not
+      security fixes).
+    homepage: https://www.debian.org/
+    health:
+      url: https://deb.debian.org/debian/dists/stable-updates/Release
+
+  - key: debian-backports
+    name: Debian backports
+    kind: official
+    url: https://deb.debian.org/debian/
+    suite: ${codename}-backports
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: >-
+      Official Debian backports suite: newer packages rebuilt for the current stable
+      release.  Not enabled in a stock installation.
+    homepage: https://backports.debian.org/
+    health:
+      url: https://deb.debian.org/debian/dists/stable-backports/Release
+
+  - key: debian-security
+    name: Debian security
+    kind: official
+    url: https://security.debian.org/debian-security/
+    suite: ${codename}-security
+    components: [main, contrib, non-free, non-free-firmware]
+    types: [deb]
+    scope: system
+    description: >-
+      Official Debian security archive (<codename>-security).  This is a different
+      URL from deb.debian.org/debian and must be configured separately.
+    homepage: https://www.debian.org/security/
+    health:
+      url: https://security.debian.org/debian-security/dists/stable-security/Release

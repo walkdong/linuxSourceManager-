@@ -1,0 +1,12 @@
+name: pnpm
+display_name: pnpm
+type: manager
+version: 0.1.0
+description: pnpm registry configuration (registry= in $HOME/.npmrc).
+scope: user
+platforms: [linux]
+requires: [pnpm]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - ~/.npmrc
+  - /etc/npmrc

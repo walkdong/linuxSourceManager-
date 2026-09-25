@@ -1,0 +1,14 @@
+name: git
+display_name: Git (URL rewriting)
+type: manager
+version: 0.1.0
+description: >-
+  `url.<base>.insteadOf` rules that transparently rewrite Git remote URLs
+  (e.g. https://github.com/ -> a mirror), stored in the global git config.
+scope: user
+platforms: [linux]
+requires: [git]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore]
+config_paths:
+  - ~/.gitconfig
+  - ~/.config/git/config

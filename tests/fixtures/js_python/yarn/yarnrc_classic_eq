@@ -1,0 +1,3 @@
+# yarn 1 configuration written with '=' instead of a space
+registry=https://registry.example.test/
+--disable-self-update-check true

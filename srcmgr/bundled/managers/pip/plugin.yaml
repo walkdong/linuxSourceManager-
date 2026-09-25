@@ -1,0 +1,13 @@
+name: pip
+display_name: pip (PyPI)
+type: manager
+version: 0.1.0
+description: pip index configuration (index-url / extra-index-url in pip.conf).
+scope: user
+platforms: [linux]
+requires: [pip]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - ~/.config/pip/pip.conf
+  - ~/.pip/pip.conf
+  - /etc/pip.conf

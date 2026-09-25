@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "source-manager"
+version = "0.1.0"
+description = "Plugin-based cross-ecosystem software source, registry and mirror manager for Linux"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Source Manager contributors" }]
+keywords = ["linux", "mirror", "apt", "npm", "pypi", "cargo", "flatpak", "docker", "repository"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Software Distribution",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = ["PyYAML>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+srcmgr = "srcmgr.cli.main:main"
+source-manager = "srcmgr.cli.main:main"
+
+[project.urls]
+Homepage = "https://example.invalid/source-manager"
+
+[tool.setuptools]
+packages = ["srcmgr", "srcmgr.cli", "srcmgr.core"]
+
+[tool.setuptools.package-data]
+srcmgr = ["bundled/managers/*/plugin.yaml", "bundled/managers/*/*.py", "bundled/providers/*/plugin.yaml", "bundled/providers/*/sources/*.yaml", "data/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

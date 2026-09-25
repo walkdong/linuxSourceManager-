@@ -1,0 +1,59 @@
+# GOPROXY endpoints in mainland China.  The URL is the proxy prefix written into
+# GOPROXY; the health URL probes a real module version list through the proxy.
+#
+# Deliberately absent after verification: mirrors.ustc.edu.cn/goproxy,
+# mirrors.tuna.tsinghua.edu.cn/goproxy, mirrors.nju.edu.cn/goproxy and
+# mirrors.bfsu.edu.cn/goproxy all answer 404 — those mirrors no longer publish a Go
+# module proxy.
+managers: [go]
+sources:
+  - key: goproxy-cn
+    name: goproxy.cn (Qiniu)
+    kind: mirror
+    url: https://goproxy.cn
+    scope: user
+    priority: 20
+    description: >-
+      goproxy.cn, operated by Qiniu Cloud: the default China Go module proxy,
+      recommended by the Go team for users in China.
+    homepage: https://goproxy.cn/
+    extra:
+      countries: [cn]
+    health:
+      url: https://goproxy.cn/github.com/pkg/errors/@v/list
+
+  - key: goproxy-io
+    name: goproxy.io
+    kind: mirror
+    url: https://goproxy.io
+    scope: user
+    description: goproxy.io, the long-running community Go module proxy for China.
+    homepage: https://goproxy.io/
+    extra:
+      countries: [cn]
+    health:
+      url: https://goproxy.io/github.com/pkg/errors/@v/list
+
+  - key: aliyun
+    name: Aliyun Go proxy
+    kind: mirror
+    url: https://mirrors.aliyun.com/goproxy/
+    scope: user
+    description: Alibaba Cloud GOPROXY mirror.
+    homepage: https://developer.aliyun.com/mirror/goproxy
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.aliyun.com/goproxy/github.com/pkg/errors/@v/list
+
+  - key: tencent
+    name: Tencent Cloud Go proxy
+    kind: mirror
+    url: https://mirrors.cloud.tencent.com/go/
+    scope: user
+    description: Tencent Cloud GOPROXY mirror.
+    homepage: https://mirrors.cloud.tencent.com/
+    extra:
+      countries: [cn]
+    health:
+      url: https://mirrors.cloud.tencent.com/go/github.com/pkg/errors/@v/list

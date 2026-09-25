@@ -1,0 +1,16 @@
+name: docker
+display_name: Docker
+type: manager
+version: 0.1.0
+description: >-
+  Docker registry mirrors in /etc/docker/daemon.json (Docker Hub stays the implicit
+  upstream whenever no mirror is configured).
+author: Source Manager
+license: MIT
+scope: system
+platforms: [linux]
+requires: [docker]
+supports: [detect, list, current, test, native-test, add, remove, enable, disable, update, backup, restore, refresh]
+config_paths:
+  - /etc/docker/daemon.json
+  - /etc/docker/daemon.json.d/*.json

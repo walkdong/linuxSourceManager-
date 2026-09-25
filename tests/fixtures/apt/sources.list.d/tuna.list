@@ -1,0 +1,3 @@
+deb https://mirrors.tuna.tsinghua.edu.cn/debian trixie main contrib non-free
+deb-src https://mirrors.tuna.tsinghua.edu.cn/debian trixie main
+# deb https://mirrors.ustc.edu.cn/debian trixie main

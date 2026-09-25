@@ -1,0 +1,20 @@
+{
+  "registry-mirrors": [
+    "https://docker.1ms.run",
+    "https://mirror.example.org"
+  ],
+  "insecure-registries": [
+    "registry.local:5000"
+  ],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "bip": "172.17.0.1/16",
+  "features": {
+    "buildkit": true
+  },
+  "experimental": false
+}
