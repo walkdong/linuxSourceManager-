@@ -1146,7 +1146,7 @@ def manager_choose(runtime: SourceManagerRuntime, args: Any, out: Output) -> int
     )
     if getattr(args, "china", False) is False and not _kind_filter(args):
         pass
-    limit = int(getattr(args, "limit", 12) or 12)
+    limit = int(getattr(args, "limit", 8) or 8)
     candidates = candidates[:limit]
     if not candidates:
         out.print(out.dim(f"{manager}: no candidate mirrors in the registry"))

@@ -408,7 +408,7 @@ def build_manager_parser(manager: str, actions: Sequence[str] = MANAGER_ACTIONS)
     p = action("choose", "measure all mirrors, then pick the best")
     p.add_argument("--china", action="store_true", help="restrict to China mirrors")
     p.add_argument("--kind", action="append", choices=[k.value for k in SourceKind])
-    p.add_argument("--limit", type=int, default=12, help="how many candidates to measure")
+    p.add_argument("--limit", type=int, default=8, help="how many candidates to measure")
     p.set_defaults(handler=_cmd_manager_choose)
 
     p = action("refresh", "run the ecosystem's update command")

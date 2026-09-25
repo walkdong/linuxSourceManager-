@@ -386,6 +386,34 @@ What each one is for:
 * **`selfhosted`** — community and university mirrors (OCF Berkeley, Princeton, MIT,
   Michigan Tech, AARNet) for Debian/Ubuntu, including non-x86 ports.
 
+### Verification status
+
+The catalogues above were verified with real requests at authoring time:
+
+* Every `health.url`/`health.urls` (159 probes) and every `${distro}` expansion
+  (25 × 2 trees) answers **200**, except the Docker registries that answer **401** with a
+  bearer realm (the registry protocol's "authenticate first", reported as a weak
+  `reachable` pass) and the `.invalid` example hosts.
+* `srcmgr <manager> test --all` over all 13 ecosystems reports **136/136 healthy**
+  (132 `ok`, 4 documented 401 `reachable`) once the example provider is disabled with
+  `srcmgr providers disable corporate-template`.  With it enabled the only failures are
+  its 8 intentionally unresolvable entries.
+* APT mirrors were additionally checked for freshness (upstream `Release` `Date:`
+  headers) and for every suite an entry can produce (`trixie`, `trixie-updates`,
+  `trixie-backports`, `trixie-security`, `noble`, `noble-updates`, `noble-backports`,
+  `noble-security`, `resolute`).
+* Some `url` values are configuration values rather than documents and answer 404/403
+  to a plain fetch — GOPROXY prefixes (`mirrors.aliyun.com/goproxy/`,
+  `mirrors.cloud.tencent.com/go/`), npm registry roots, PEP 503 index roots, conda
+  channel roots, cargo `sparse+…` values (a scheme curl cannot speak at all) and the Git
+  rewrite bases.  Their functional probes are the health URLs, and the bundled Git
+  entries therefore use `health: {method: GET, url: …info/refs?service=git-upload-pack}`
+  so the check performs a real smart-HTTP handshake instead of a HEAD that proxies
+  answer with 405.
+* A handful of hosts (dotsrc, ghproxy, Huawei's directory indexes) answer 403/429 to
+  rapid-fire tooling; re-checking them individually returns 200.  When contributing,
+  space out bulk probes rather than trusting a single rate-limited run.
+
 ### Verified exclusions
 
 These were tested and deliberately left out; re-adding them without new evidence would
