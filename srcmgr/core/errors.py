@@ -65,6 +65,15 @@ class HistoryError(SourceManagerError):
     code = "history"
 
 
+class LockedError(SourceManagerError):
+    """The ecosystem is locked: the requested change must not happen."""
+
+    code = "locked"
+
+    def __init__(self, message: str, *, hint: str | None = None) -> None:
+        super().__init__(message, hint=hint)
+
+
 class PermissionDenied(SourceManagerError):
     """A system-level manager was used without sufficient privileges."""
 

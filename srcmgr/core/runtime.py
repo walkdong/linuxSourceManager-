@@ -36,6 +36,7 @@ from .health import (
     test_sources,
 )
 from .history import HistoryStore, Record
+from .locks import LOCKED_ACTIONS, LockStore, assert_unlocked
 from .paths import cache_dir, is_root, is_writable
 from .plugins import LoadedManager, LoadedProvider, PluginLoader
 from .registry import SourceRegistry, source_matches
@@ -159,6 +160,7 @@ class SourceManagerRuntime:
         registry: SourceRegistry | None = None,
         backups: BackupStore | None = None,
         history: HistoryStore | None = None,
+        locks: LockStore | None = None,
         cache: HealthCache | None = None,
         command: str = "",
     ) -> None:
@@ -172,6 +174,7 @@ class SourceManagerRuntime:
         self._registry = registry
         self.backups = backups or BackupStore()
         self.history = history or HistoryStore()
+        self.locks = locks or LockStore()
         health_settings = self.config.health()
         self.cache = cache or HealthCache(ttl=float(health_settings.get("cache_ttl", 900)))
 
@@ -467,6 +470,14 @@ class SourceManagerRuntime:
                 message=f"dry-run: would {action}{target} for {plugin.name}",
                 details={"dry_run": True},
             )
+        # A lock is absolute for source changes: check it before the root guard so the
+        # user gets the actionable "unlock first" message rather than a sudo prompt.
+        assert_unlocked(
+            plugin.name,
+            action=action,
+            locks=self.locks,
+            display_name=plugin.manifest.display_name or plugin.name,
+        )
         self._guard(plugin, source)
         backup_id = ""
         if self.config.backup(plugin.name).get("before_change", True):
@@ -828,6 +839,70 @@ class SourceManagerRuntime:
         )
         return backup_id
 
+    # -------------------------------------------------------------- lock API
+    def is_locked(self, manager: str) -> bool:
+        """True when ``manager`` is pinned and must not be changed."""
+        return self.locks.is_locked(canonical_manager(manager))
+
+    def locked_managers(self) -> list[str]:
+        return self.locks.locked()
+
+    def lock(self, manager: str, *, reason: str = "") -> bool:
+        """Pin an ecosystem. Records the lock in history so the change is visible."""
+        name = canonical_manager(manager)
+        changed = not self.locks.is_locked(name)
+        self.locks.lock(name, reason=reason)
+        if changed:
+            self.history.log(
+                "lock", manager=name, ok=True, message="locked", command=self.command
+            )
+        return True
+
+    def unlock(self, manager: str) -> bool:
+        name = canonical_manager(manager)
+        changed = self.locks.unlock(name)
+        if changed:
+            self.history.log(
+                "unlock", manager=name, ok=True, message="unlocked", command=self.command
+            )
+        return changed
+
+    def toggle_lock(self, manager: str, *, reason: str = "") -> bool:
+        """Flip the lock and report the new state (``True`` = locked)."""
+        name = canonical_manager(manager)
+        locked = self.locks.toggle(name, reason=reason)
+        self.history.log(
+            "lock" if locked else "unlock",
+            manager=name,
+            ok=True,
+            message="locked" if locked else "unlocked",
+            command=self.command,
+        )
+        return locked
+
+    def prune_locks(self) -> list[str]:
+        try:
+            known = self.manager_names()
+        except SourceManagerError:  # pragma: no cover - plugin load failure
+            return []
+        return self.locks.prune(known)
+
+    def restore_backup(self, backup_id: str, *, manager: str = "") -> OperationResult:
+        """Restore one specific snapshot (the UI's "备份与还原" action).
+
+        ``manager`` is optional: the snapshot itself records who owns it.  Restoring is
+        allowed even for a locked ecosystem - it is the documented way back.
+        """
+        manifest = self.backups.get(backup_id)  # raises when unknown
+        target = canonical_manager(manager) if manager else manifest.manager
+        if target != manifest.manager:
+            # A snapshot only makes sense for its own manager; refuse instead of writing
+            # another ecosystem's files.
+            raise SourceManagerError(
+                f"备份 {backup_id} 属于 {manifest.manager}，不能还原到 {target}"
+            )
+        return self.restore(target, backup_id)
+
     def restore(self, manager: str, backup_id: str) -> OperationResult:
         plugin = self.plugin(manager)
         self._guard(plugin)
@@ -978,6 +1053,12 @@ class SourceManagerRuntime:
     def apply_fallback(
         self, manager: str, plan: ChangePlan | None = None, *, dry_run: bool = False
     ) -> OperationResult:
+        if self.is_locked(manager):
+            return OperationResult(
+                ok=False,
+                message=f"{canonical_manager(manager)} 已锁定：跳过自动切换",
+                details={"locked": True},
+            )
         plan = plan or self.fallback_plan(manager)
         if not plan.to_source:
             return OperationResult(ok=False, message=f"no fallback: {plan.reason}")

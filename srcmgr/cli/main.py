@@ -69,6 +69,8 @@ COMMANDS = (
     "backup",
     "rollback",
     "restore",
+    "lock",
+    "unlock",
     "plugins",
     "providers",
     "config",
@@ -305,6 +307,19 @@ def add_commands(parser: argparse.ArgumentParser, commands: Sequence[str]) -> No
     sp.add_argument("name")
     sp.set_defaults(handler=_cmd_providers_info)
     p.set_defaults(handler=_cmd_providers_list)
+
+    # lock / unlock ----------------------------------------------------------
+    p = subparsers.add_parser(
+        "lock", help="pin an ecosystem so nothing can change its sources"
+    )
+    p.add_argument("manager", nargs="?", help="manager name (omit to list the locks)")
+    p.add_argument("--list", "-l", action="store_true", help="list locked ecosystems")
+    p.add_argument("--reason", default="", help="why it is locked (shown in history)")
+    p.set_defaults(handler=_cmd_lock)
+    p = subparsers.add_parser("unlock", help="release a pinned ecosystem")
+    p.add_argument("manager", nargs="?", help="manager name (omit to unlock everything)")
+    p.add_argument("--all", action="store_true", help="unlock every ecosystem")
+    p.set_defaults(handler=_cmd_unlock)
 
     # config -----------------------------------------------------------------
     p = subparsers.add_parser("config", help="read and write Source Manager configuration")
@@ -670,7 +685,7 @@ def _run(
     raw_argv: Sequence[str],
     out: Output | None = None,
 ) -> int:
-    from ..core.errors import ManifestError, PermissionDenied
+    from ..core.errors import LockedError, ManifestError, PermissionDenied
 
     color_mode = "never" if getattr(args, "no_color", False) else (getattr(args, "color", None) or "auto")
     if out is None:
@@ -698,6 +713,9 @@ def _run(
     except PermissionDenied as exc:
         out.error(str(exc))
         return 4
+    except LockedError as exc:
+        out.error(str(exc))
+        return 7
     except SourceManagerError as exc:
         out.error(exc.message, exc.hint)
         return 2
@@ -824,6 +842,14 @@ def _cmd_config_managers(runtime: SourceManagerRuntime, args: argparse.Namespace
 
 def _cmd_doctor(runtime: SourceManagerRuntime, args: argparse.Namespace, out: Output) -> int:
     return cmd.doctor(runtime, args, out)
+
+
+def _cmd_lock(runtime: SourceManagerRuntime, args: argparse.Namespace, out: Output) -> int:
+    return cmd.lock(runtime, args, out)
+
+
+def _cmd_unlock(runtime: SourceManagerRuntime, args: argparse.Namespace, out: Output) -> int:
+    return cmd.unlock(runtime, args, out)
 
 
 def _cmd_version(runtime: SourceManagerRuntime, args: argparse.Namespace, out: Output) -> int:

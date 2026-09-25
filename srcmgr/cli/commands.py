@@ -1437,6 +1437,58 @@ def plugins_new(runtime: SourceManagerRuntime, args: Any, out: Output) -> int:
     return 0
 
 
+def lock(runtime: SourceManagerRuntime, args: Any, out: Output) -> int:
+    """``srcmgr --cli lock [manager]``: pin an ecosystem, or list what is pinned."""
+    name = getattr(args, "manager", None)
+    if not name or getattr(args, "list", False):
+        locked = runtime.locked_managers()
+        details = runtime.locks.snapshot()
+        if out.json_mode:
+            out.json({"locked": locked, "details": details})
+            return 0
+        if not locked:
+            out.print(out.dim("没有锁定的生态（srcmgr --cli lock <manager> 可以锁定）"))
+            return 0
+        out.table(
+            ["manager", "locked at", "effect"],
+            [[item, details.get(item, "-"), "拒绝一切源修改"] for item in locked],
+            aligns=["left", "left", "left"],
+        )
+        return 0
+    manager = canonical_manager(name)
+    runtime.plugin(manager)  # an unknown manager must fail loudly
+    already = runtime.is_locked(manager)
+    runtime.lock(manager, reason=getattr(args, "reason", "") or "cli")
+    if out.json_mode:
+        out.json({"manager": manager, "locked": True})
+        return 0
+    if already:
+        out.print(f"{manager} 已经是锁定状态")
+    else:
+        out.success(f"已锁定 {manager}：任何切换（手动 / 一键 / 自动）都会被拒绝")
+    out.note(f"解锁：srcmgr --cli unlock {manager}")
+    return 0
+
+
+def unlock(runtime: SourceManagerRuntime, args: Any, out: Output) -> int:
+    """``srcmgr --cli unlock [manager|--all]``."""
+    name = getattr(args, "manager", None)
+    if getattr(args, "all", False) or not name:
+        count = runtime.locks.unlock_all()
+        if out.json_mode:
+            out.json({"unlocked": count})
+            return 0
+        out.success(f"已解锁 {count} 个生态" if count else "本来就没有锁定的生态")
+        return 0
+    manager = canonical_manager(name)
+    runtime.plugin(manager)
+    if runtime.unlock(manager):
+        out.success(f"已解锁 {manager}，现在可以切换源了")
+    else:
+        out.print(f"{manager} 本来就没有锁定")
+    return 0
+
+
 def plugins_repo(runtime: SourceManagerRuntime, args: Any, out: Output) -> int:
     paths = runtime.plugin_paths()
     if out.json_mode:
