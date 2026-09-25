@@ -52,37 +52,61 @@ srcmgr managers
 `srcmgr` needs root **only** for system-wide ecosystems (APT, Docker, system Flatpak,
 Snap); every user-level ecosystem works unprivileged.
 
-## Quick tour
+## Three ways in
+
+| Command | What you get |
+|---|---|
+| `srcmgr` | **interactive terminal UI** — a Claude-Code-style REPL with Tab completion, history and `:` commands |
+| `srcmgr --cli <command>` | **one-shot commands** for scripts and muscle memory |
+| `srcmgr --gui` | graphical UI — reserved for later, reports "not implemented" |
 
 ```bash
-srcmgr                       # every ecosystem, what is usable here, current sources
-srcmgr managers              # same, tabular
-srcmgr sources --available   # all sources, all ecosystems (installed + catalogue)
-
-srcmgr apt list              # installed APT sources, with enabled/disabled/current marks
-srcmgr apt list --available --china        # mirrors you could switch to
-srcmgr apt add tuna          # add the Tsinghua mirror (writes deb822, snapshots first)
-srcmgr apt enable tuna       # make it active
-srcmgr apt test --all        # latency / HTTP / TLS of every candidate mirror
-srcmgr apt choose            # measure mirrors, rank them, pick one interactively
-srcmgr apt rollback          # undo the last change from the snapshot
-srcmgr apt refresh           # apt-get update
-
-srcmgr health --watch 30     # live health of every ecosystem
-srcmgr fallback --enable apt # opt-in automatic failover for apt
-srcmgr history --manager apt # what changed, when, with which backup
-srcmgr backup list           # snapshots; srcmgr restore <id>
-srcmgr doctor                # diagnose plugins, permissions, providers, health
+srcmgr                                     # open the TUI (type :help inside)
+srcmgr --tui                               # same, explicit
+srcmgr --cli managers                      # one-shot: what exists here
+srcmgr --cli --json sources --available    # machine readable
 ```
 
-Useful global flags, accepted **anywhere** on the command line:
+Inside the TUI you type the CLI's words without the prefix:
+
+```
+srcmgr ❯ apt list --available --china      mirrors you could switch to
+srcmgr ❯ apt add tuna                      add it (snapshot taken automatically)
+srcmgr ❯ apt test --all                    latency / HTTP / TLS per mirror
+srcmgr ❯ apt choose                        measure, rank, pick the fastest
+srcmgr ❯ apt rollback                      undo the last change
+srcmgr ❯ health                            every ecosystem at a glance
+srcmgr ❯ :help                             full command reference
+```
+
+The equivalent one-shot forms (use these in scripts):
+
+```bash
+srcmgr --cli apt list --available --china
+srcmgr --cli apt add tuna
+srcmgr --cli apt test --all
+srcmgr --cli apt choose --china
+srcmgr --cli apt rollback
+srcmgr --cli health --watch 30          # live health of every ecosystem
+srcmgr --cli fallback --enable apt      # opt-in automatic failover
+srcmgr --cli history --manager apt      # what changed, when, with which backup
+srcmgr --cli backup list                # snapshots; srcmgr --cli restore <id>
+srcmgr --cli doctor                     # diagnose plugins, permissions, providers
+```
+
+Useful global flags, accepted **anywhere** after `--cli`:
 `--json`, `--porcelain` (tab separated, for scripts), `--dry-run/-n`, `-y`,
 `-v/-q`, `--no-color`, `--config FILE`.
+
+> **Note:** one-shot commands require `--cli`.  The pre-0.2 shorthand
+> `srcmgr apt list` now exits with an error explaining this, because a bare `srcmgr`
+> means "open the interactive UI".
 
 ## How it is built
 
 ```
-CLI (srcmgr/cli)  →  SourceManagerRuntime (srcmgr/core/runtime.py)
+TUI (srcmgr/tui)  ┐
+CLI (srcmgr/cli)  ┼→  SourceManagerRuntime (srcmgr/core/runtime.py)
                        ├── PluginLoader    bundled + user plugins, trust model
                        ├── SourceRegistry  merges source providers into a catalogue
                        ├── health          HTTP/TLS/native probes, scoring, cache
@@ -90,7 +114,10 @@ CLI (srcmgr/cli)  →  SourceManagerRuntime (srcmgr/core/runtime.py)
                        ├── HistoryStore    append-only log / rollback
                        └── Config          defaults < config.yaml < per-manager < env
                      →  ManagerPlugin implementations (srcmgr/bundled/managers/*)
-```
+
+Both frontends call the same command handlers, and both route user questions through
+`srcmgr.core.interaction`, so a future GUI is a third peer rather than a rewrite.
+See [`docs/tui.md`](docs/tui.md) and [`docs/architecture.md`](docs/architecture.md).
 
 Every mutation follows the same pipeline:
 
@@ -104,9 +131,9 @@ aborts the change before anything is written.
 ### Writing your own plugin
 
 ```bash
-srcmgr plugins new mymanager            # manager plugin skeleton
-srcmgr plugins new mymirrors --type provider --managers apt,npm
-srcmgr plugins install ./mymirrors --trust
+srcmgr --cli plugins new mymanager            # manager plugin skeleton
+srcmgr --cli plugins new mymirrors --type provider --managers apt,npm
+srcmgr --cli plugins install ./mymirrors --trust
 ```
 
 * `srcmgr/bundled/managers/<name>/{plugin.yaml,manager.py}` — how to operate an ecosystem.
@@ -151,9 +178,11 @@ All three roots are overridable: `SRCMGR_CONFIG_HOME`, `SRCMGR_DATA_HOME`,
 
 ## Status
 
-Alpha, CLI-only (a GUI is a possible future consumer of `srcmgr.core`).  The engine,
-CLI, health/backup/history/rollback pipeline and 14 ecosystem manager plugins are
-implemented and tested; see `PROGRESS.md` for the current milestone.
+Alpha.  The engine, interactive TUI, CLI, the health/backup/history/rollback pipeline,
+14 ecosystem manager plugins and 7 source providers (144 verified sources) are
+implemented and tested (330 tests).  A GUI is planned and already reserved at
+`srcmgr --gui`; it will consume `srcmgr.core` like the other frontends do.  See
+`PROGRESS.md` for the current milestone and what is next.
 
 ## License
 

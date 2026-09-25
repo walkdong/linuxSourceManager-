@@ -4,21 +4,42 @@
 > `CLAUDE.md` → `PROGRESS.md` → `git log` → the code named below, then continue from
 > the **NEXT STEP** section. Do not re-plan the project from scratch.
 
-*Last updated: 2026-09-25 (session 1, final pass — registry complete, 304 tests green)*
+*Last updated: 2026-09-25 (session 2 — M4 three-frontend model, 330 tests green)*
 *Version: 0.1.0 — GUI deliberately not started (CLI + core only).*
 
 ---
 
 ## 1. Where the project is
 
-**Phase: M3 complete — verified, documented, committed.** Every milestone from the
-original brief is implemented; the remaining work is listed under *Known gaps* and is
-optional polish.
+**Phase: M4 complete — TUI + CLI frontends shipped, GUI slot reserved.**
+M3 (engine, plugins, registry, docs) is done and frozen; the current work is the
+frontend model plus whatever the *Known gaps* list still wants.
 
-Status: **304 tests passing**, 14 manager plugins, 7 source providers (**144 registry
-entries**, every URL HTTP-verified by the provider author), CLI working end to end,
-`pip install` verified from a wheel in a clean venv, nothing under `/etc` ever written
-outside the sandboxed test roots (fingerprinted before/after every session).
+Status: **330 tests passing**, 14 manager plugins, 7 source providers (**144 registry
+entries**, every URL HTTP-verified), three frontends (bare `srcmgr` = TUI,
+`--cli` = one-shot, `--gui` = reserved), `pip install` verified from a wheel in a clean
+venv, nothing under `/etc` ever written outside the sandboxed test roots
+(fingerprinted before/after every session).
+
+### M4 — frontend model (this milestone)
+
+| Invocation | Frontend | Notes |
+|---|---|---|
+| `srcmgr` | **TUI** | prompt_toolkit REPL; once a GUI exists, a bare invocation should prefer it |
+| `srcmgr --tui` | TUI | explicit |
+| `srcmgr --cli <cmd...>` | CLI | **mandatory** for one-shot commands |
+| `srcmgr --gui` | GUI | reserved: exits 3 with "not implemented yet" |
+| `srcmgr apt list` | *refused* | exits 2 with `srcmgr --cli apt list` in the hint |
+
+* `srcmgr/tui/app.py` — REPL: banner, `:help`/`:clear`/`:refresh`/`:stats`/`:quit`,
+  Ctrl-C abandons a line, Ctrl-D leaves, confirmations asked in the TUI prompt.
+* `srcmgr/tui/completion.py` — context-aware Tab completion built from the CLI's own
+  `COMMANDS`/`MANAGER_ACTIONS` plus live registry/source data.
+* `srcmgr/core/interaction.py` — context-var seam (`ask_hook`, `output_hook`,
+  `frontend`) so **one** command implementation serves every frontend; a GUI plugs in
+  the same way the TUI does.
+* TUI commands are the CLI's words (`apt add tuna`, `health --watch 30`), so nothing has
+  to be learned twice; `--json`/`--porcelain` are neutralised inside the transcript.
 
 ### Done
 
@@ -34,8 +55,9 @@ outside the sandboxed test roots (fingerprinted before/after every session).
 | 8 | 14 manager plugins: apt, flatpak, snap, docker, npm, yarn, pnpm, pip, cargo, go, git, maven, rubygems, conda | ✅ | `srcmgr/bundled/managers/*` |
 | 9 | Source registry: 7 providers, 144 entries, `${codename}`/`${distro}` templating, verified mirror URLs | ✅ | `srcmgr/bundled/providers/*` |
 | 10 | Plugin/source-provider marketplace flow (install/trust/uninstall/scaffold) | ✅ | `core/plugins.py`, `cli/commands.py` |
-| 11 | Tests: 304 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt archive family 16) | ✅ all green | `tests/` |
-| 12 | Docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/{source-providers,architecture,operations}.md`, `LICENSE` | ✅ | repo root, `docs/` |
+| 11 | Tests: 330 (plugins 206 + CLI 26 + core 21 + runtime safety 13 + providers 22 + apt archive family 16 + TUI 26) | ✅ all green | `tests/` |
+| 12 | Docs: `CLAUDE.md`, `PROGRESS.md`, `README.md`, `docs/{source-providers,architecture,operations,tui}.md`, `LICENSE` | ✅ | repo root, `docs/` |
+| 14 | **M4 frontends**: TUI (`srcmgr/tui`), `--cli` gate, `--gui` reservation, interaction seam | ✅ | `srcmgr/tui/*`, `core/interaction.py` |
 | 13 | `pip install -e .` + console scripts `srcmgr` / `source-manager` | ✅ verified | `pyproject.toml` |
 
 ### Bugs found and fixed this session (regression-tested)
@@ -85,6 +107,24 @@ outside the sandboxed test roots (fingerprinted before/after every session).
 13. History timestamps had second resolution, so rapid changes compared equal and
     `rollback` could pick the wrong entry.
 
+### M4 bugs found and fixed (regression-tested)
+
+14. A bare `srcmgr` in a pipe would have launched the UI: `run()` now refuses without a
+    terminal and points at `--cli`.
+15. **`snap get` blocked forever** when the process had no controlling terminal, and
+    completion queried it during start-up — the TUI appeared to hang on a blank screen.
+    Fix: every plugin shell-out is capped (`SRCMGR_PLUGIN_TIMEOUT`, default 15 s) and
+    `stdin` is `DEVNULL`.
+16. Completion refresh of 14 managers ran on the main thread, delaying the first prompt;
+    it now runs on a worker thread and `Session` publishes state atomically.
+17. `banner_text()` called `status()` per manager (which shells out) — the banner is now
+    pure formatting and takes ~0.6 s to first paint.
+18. The TUI's `:help` printed literal `[banner]` markup (prompt_toolkit `HTML` tags in a
+    plain `print`).
+19. `KeyValueFile.set_many` used an undefined `original` when rewriting a line, and the
+    TUI's completion helper leaked a comprehension variable (both silent data bugs found
+    by pyflakes / tests).
+
 ### Known gaps / TODO (optional polish, in order)
 
 1. **`snap` has no provider catalogue** — by design: snapd has a single hardcoded store,
@@ -97,20 +137,31 @@ outside the sandboxed test roots (fingerprinted before/after every session).
    path.
 3. `srcmgr apt choose` was exercised non-interactively (`--yes` picks the fastest); one
    human interactive run is still worth doing for the transcript.
-4. Optional: CI recipe (GitHub Actions running `pytest`), a `srcmgr health` systemd timer
-   example is already in `docs/operations.md`, and provider signing for the marketplace.
+4. TUI polish backlog: a live status strip (per-ecosystem health at the bottom of the
+   screen), `--json` rendered as a collapsible view, and fuzzy history search (Ctrl-R is
+   prompt_toolkit's default search, which already works).
+5. **GUI**: `--gui` is reserved but unimplemented.  When it is built it must consume
+   `srcmgr.core` only (never `srcmgr.cli`), install its hooks through
+   `srcmgr.core.interaction.interactive(...)`, and take over the bare-`srcmgr` entry
+   point from the TUI (that is the intended behaviour).
+6. Optional: CI recipe (GitHub Actions running `pytest`), provider signing for the
+   marketplace.
 
 ## 2. NEXT STEP (start here in a new session)
 
 ```bash
 cd /home/alnilam/Downloads/compress/outdsh/sourceManager
 .venv/bin/python -m pytest tests/ -q                       # 1. everything green?
-SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache \
-  .venv/bin/python bin/srcmgr providers list               # 2. all providers 'ok'
-SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache \
-  .venv/bin/python bin/srcmgr apt available --china | head # 3. mirrors listed
-.venv/bin/python -m pytest tests/test_cli.py -q            # 4. CLI end-to-end
+.venv/bin/python bin/srcmgr --cli providers list           # 2. all providers 'ok'
+.venv/bin/python bin/srcmgr --cli apt available --china    # 3. mirrors listed
+.venv/bin/python bin/srcmgr                                # 4. TUI (needs a real terminal)
+.venv/bin/python bin/srcmgr --tui --help                   # 5. the three frontends
 ```
+
+Note the new invocation rule: **one-shot commands need `--cli`**.  `managers`, `sources`,
+`test`, `health`, `fallback`, `history`, `backup`, `rollback`, `restore`, `plugins`,
+`providers`, `config`, `doctor` are unchanged apart from that prefix.  In the TUI, type
+them without `--cli` (and without `srcmgr`).
 
 All of the above should be green (304 tests, 7 providers `ok`, 144 sources).  Then pick
 the first item from *Known gaps* that matters to you.  Verify at the end that the real
@@ -165,6 +216,15 @@ per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
 
 ## 5. Session log (newest first)
 
+* **session 2** — M4: three-frontend entry model.  Bare `srcmgr` opens a prompt_toolkit
+  TUI (banner, Tab completion, history, `:` meta commands, confirmations inside the UI),
+  `--cli` became mandatory for one-shot commands (old shorthand refused with a hint),
+  `--gui` reserved with a clear "not implemented" exit 3.  Added
+  `srcmgr/core/interaction.py` as the frontend seam and `ManagerPlugin.registry` wiring.
+  Fixed six bugs (offline/pipe guard, `snap get` blocking start-up, `KeyValueFile`
+  undefined variable, completion variable leak, banner shelling out, help markup).
+  Added `SRCMGR_OFFLINE` (+ `SRCMGR_PLUGIN_TIMEOUT`) which kept the suite hermetic and
+  cut it from 90 s back to 52 s.  `docs/tui.md` written; 330 tests green; pyflakes clean.
 * **session 1 (final)** — registry finished and verified by its author (144 sources, all
   URLs curl-checked, dead mirrors removed: Ruby China's broken TLS, TUNA/USTC/163 docker
   accelerators, USTC/TUNA/NJU Go proxies, conda substitutions); fixed the derivative

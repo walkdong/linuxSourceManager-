@@ -45,6 +45,7 @@ GUI is intentionally out of scope for now (a future consumer of `srcmgr.core`).
 
 ```
 srcmgr/
+  tui/             interactive frontend (prompt_toolkit): app.py REPL, completion.py
   core/            engine — ecosystem agnostic, no CLI concerns
     api.py         Source/TestResult/OperationResult + ManagerPlugin/Provider contracts
     helpers.py     shared plugin building blocks (SingleValueManager, KeyValueFile, ini/…)
@@ -53,7 +54,8 @@ srcmgr/
     health.py      HTTP/TLS probes, native checks, scoring, cache
     backup.py      snapshots + restore        history.py  operation log + rollback
     config.py      layered config             paths.py    XDG dirs, atomic writes
-    runtime.py     SourceManagerRuntime — the facade the CLI uses
+    runtime.py     SourceManagerRuntime — the facade every frontend uses
+    interaction.py frontend seam: ask/output hooks + current frontend name
     selection.py   "tuna" | "#3" | id | url → a Source
   cli/
     main.py        argparse tree (git-style: `srcmgr apt list`)
@@ -126,7 +128,33 @@ Implement `detect/list_enabled/list_available/add/remove/enable/disable/update`
 `docs/source-providers.md` for the schema and the accuracy policy.
 
 **A new CLI command** = a `_cmd_*` function in `cli/commands.py` + a parser branch in
-`cli/main.py` (keep the handler thin; put logic in `core/runtime.py`).
+`cli/main.py` (keep the handler thin; put logic in `core/runtime.py`).  The TUI picks it
+up automatically — never duplicate a command there.
+
+## 5a. Frontends (M4): one engine, three entry points
+
+```
+srcmgr                → TUI     (srcmgr/tui)      bare name = interactive
+srcmgr --tui          → TUI     explicit
+srcmgr --cli <args>   → CLI     the ONLY way to run one-shot commands
+srcmgr --gui          → GUI     reserved; must not be implemented piecemeal
+```
+
+Rules:
+
+1. **`--cli` is mandatory** for one-shot commands; the pre-M4 shorthand (`srcmgr apt
+   list`) must keep failing with a hint that shows the corrected command. Never make the
+   gate lenient "just for one case" — scripts rely on a bare name never going interactive.
+2. Handlers live in `cli/commands.py` and are reached through
+   `cli/main.py:_run_cli(argv, out=…)`. The TUI calls exactly that; it must not call
+   `plugin`/`runtime` methods directly for anything the CLI can do.
+3. Anything that needs user input goes through `Output.confirm()`, which consults
+   `core/interaction.ask_hook`; a frontend installs the hook with
+   `core/interaction.interactive(...)`. Never call `input()` from a handler.
+4. A frontend must never import another frontend. `srcmgr.core` must not import
+   `srcmgr.cli` or `srcmgr.tui`.
+5. New user-visible strings that the TUI renders must be **plain text** (no
+   prompt_toolkit `HTML`/`ANSI` markup) — the transcript is printed, not parsed.
 
 ## 6. Definition of done for any change
 

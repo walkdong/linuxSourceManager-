@@ -6,12 +6,17 @@ follows from that split.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ CLI  (srcmgr/cli)                                                            │
-│   main.py      argparse tree, global flags accepted anywhere                  │
-│   commands.py  one function per command (thin)                                │
-│   output.py    tables / colour / JSON / prompts, no third-party deps          │
+│ frontends                                                                    │
+│   TUI  (srcmgr/tui)   prompt_toolkit REPL, completion, history                │
+│   CLI  (srcmgr/cli)   argparse tree, one function per command, plain tables   │
+│   GUI  (srcmgr --gui) reserved - must consume only srcmgr.core                │
+│                                                                              │
+│   Dispatch:  bare `srcmgr` -> TUI, `--tui` -> TUI, `--cli` -> CLI,           │
+│              `--gui` -> reserved; anything else is refused with a hint.      │
 └───────────────────────────┬──────────────────────────────────────────────────┘
-                            │ every command calls the runtime
+                            │ every frontend calls the same command handlers /
+                            │ runtime; questions flow back through
+                            │ srcmgr.core.interaction (ask_hook/output_hook)
 ┌───────────────────────────▼──────────────────────────────────────────────────┐
 │ SourceManagerRuntime  (srcmgr/core/runtime.py)                                │
 │   the only façade; a GUI or a script would use exactly this                   │
@@ -102,11 +107,27 @@ immediately but never imported until trusted, via `srcmgr plugins trust <name>` 
 with path-traversal and symlink checks, and `plugins install` warns loudly before
 trusting.  Remote installs can be disabled entirely (`plugins.allow_remote_install`).
 
+## Frontend contract
+
+Anything that drives Source Manager obeys three rules:
+
+1. It calls `srcmgr.cli.main._run_cli(argv, out=…)` (the TUI does) or the runtime API
+   directly — never a private helper of another frontend.
+2. It installs `srcmgr.core.interaction.interactive(ask=…, output=…, name=…)` around a
+   command, so `Output.confirm()` asks the user through the active frontend instead of
+   stdin.
+3. It never imports `srcmgr.cli` from `srcmgr.core` (the dependency arrow points one way
+   only: frontend → core).
+
+The TUI is the reference implementation of that contract; a GUI is the next one.
+
 ## What is deliberately *not* here
 
 * No package install/uninstall.  That layer belongs to apt/npm/pip/…; Source Manager
   changes which source they resolve from.
-* No GUI (yet).  `srcmgr.core` is UI-agnostic precisely so one can be added later.
+* No GUI *yet*: `--gui` is reserved and exits with a clear message.  `srcmgr.core` is
+  UI-agnostic (and `interaction.py` provides the seam) precisely so one can be added
+  without touching the engine.
 * No daemon.  `health --watch` is a loop; run it from a systemd timer if you want
   continuous monitoring.
 * No silent rewriting.  Automatic failover is opt-in and always produces a plan first.
