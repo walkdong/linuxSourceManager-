@@ -181,8 +181,19 @@ Key design decisions (do not undo these casually):
 守卫 `_refuse_real_home`——只要 `SRCMGR_CONFIG_HOME/DATA_HOME/CACHE_HOME` 解析到真 HOME
 里面，测试立刻失败（已验证该守卫会真的拦住）。
 
-**结论（写进规则）**：任何手动验证脚本都必须先设 `HOME`/`SRCMGR_*` 到临时目录，
-绝不能依赖"反正只是读"。
+**第二次复发（session 4 发现）**：同一类脚本（session 3 末尾做"一键换最快"联网验证）又留下
+了 `~/.npmrc`（18:00）以及 `~/.config|~/.local/share|~/.cache/source-manager`（18:02–18:04）。
+已全部删除并恢复 npm 官方默认源。
+
+**已采取的实际措施**（不要再只靠"记得"）：
+用仓库里的包装脚本跑任何手动验证，它把 `HOME` 和所有 `SRCMGR_*` 根目录都指向沙箱：
+
+```
+scripts/hermetic.sh .venv/bin/python bin/srcmgr --cli managers
+scripts/hermetic.sh .venv/bin/python bin/srcmgr          # 菜单界面
+```
+
+`tests/conftest.py::_refuse_real_home` 是第二道防线（测试里若指向真 HOME 立刻失败）。
 
 ### M5 bugs found and fixed (regression-tested)
 

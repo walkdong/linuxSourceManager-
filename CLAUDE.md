@@ -116,8 +116,12 @@ bin/srcmgr         run straight from a checkout
   (or `pip install -e .` for the `srcmgr` console script).  A bare `bin/srcmgr` opens the
   menu UI and therefore needs a real terminal; `/tmp/tui_m5b.py`-style pty scripts are how
   the UI is verified without one.
-* Hermetic CLI run:
-  `SRCMGR_CONFIG_HOME=/tmp/sm-cfg SRCMGR_DATA_HOME=/tmp/sm-data SRCMGR_CACHE_HOME=/tmp/sm-cache .venv/bin/python bin/srcmgr --cli …`
+* **Never run a manual check against the real home.**  Use the wrapper, which redirects
+  `HOME` and every `SRCMGR_*` root into a sandbox:
+  `scripts/hermetic.sh .venv/bin/python bin/srcmgr --cli managers`
+  (twice a hand-written script forgot this and left a `~/.npmrc` and state directories in
+  the developer's real home; `tests/conftest.py::_refuse_real_home` guards the suite, the
+  wrapper guards ad-hoc commands).
 * **Keep `PROGRESS.md` current**: it is the hand-off document. Update its
   "Current status" and "Next step" sections *before* you stop working.
 * Commit in small, described steps (`git commit`), because the next session starts by
