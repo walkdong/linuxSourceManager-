@@ -31,7 +31,13 @@ from .paths import atomic_write_bytes, backups_dir, ensure_dir, load_json, write
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    """ISO-8601 UTC timestamp with microsecond precision.
+
+    Microseconds matter: two mutations inside the same second must still order
+    correctly in the history log (they used to compare equal, so ``rollback`` could pick
+    the wrong entry).
+    """
+    return datetime.now(timezone.utc).isoformat()
 
 
 def stamp() -> str:

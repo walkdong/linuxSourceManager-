@@ -162,7 +162,10 @@ class HistoryStore:
                     records.append(Record.from_dict(data))
         except OSError as exc:  # pragma: no cover - unreadable log
             raise HistoryError(f"cannot read history: {exc}") from exc
-        records.sort(key=lambda r: r.ts, reverse=True)
+        # Newest first; a stable reverse keeps insertion order for identical timestamps
+        # (old log files written before microseconds were recorded).
+        records.sort(key=lambda r: r.ts)
+        records.reverse()
         return records[:limit] if limit else records
 
     def last_backup(self, manager: str | None = None) -> str:
