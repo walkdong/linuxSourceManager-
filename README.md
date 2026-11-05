@@ -32,48 +32,71 @@ Why it exists:
 
 ---
 
-## 安装（三种方式，选一个）
+## 安装
 
-**① 一行命令（推荐，任何发行版）**
+项目处于 Alpha，**尚未发布到 PyPI 和 GitHub Releases**（PyPI 上还没有 `source-manager`
+这个包，Releases 页也是空的），所以现在真正开箱即用的入口是 **① 从源码安装**；
+②③ 的流程已经写好并验证过，只是要等发布、或按下述方法自己构建。
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/source-manager/source-manager/main/scripts/install.sh | sh
-```
+### ① 从源码安装（现在就能用，推荐）
 
-装完从**应用菜单**点"源管理器"即可（会自动创建图标）。它只往 `~/.local/bin` 和
-`~/.local/share/source-manager` 写东西，不动系统 Python、不装到 `/usr`。
-
-**② 单文件可执行（不需要 Python）**
-
-从 [Releases](https://github.com/source-manager/source-manager/releases) 下载
-`srcmgr-linux-x86_64`：
+需要 Linux + Python ≥ 3.10：
 
 ```sh
-chmod +x srcmgr-linux-x86_64 && ./srcmgr-linux-x86_64
+git clone https://github.com/walkdong/linuxSourceManager-.git
+cd linuxSourceManager-
+python3 -m venv .venv
+.venv/bin/pip install -e .      # PyYAML / prompt_toolkit / textual 会一起装上
 ```
 
-首次运行会把自己装到 `~/.local/bin` 并创建菜单图标（支持 Ubuntu 22.04+/Debian 12+）。
+装好了。全屏菜单和一次性命令（注意：一次性命令**必须**带 `--cli`，裸命令会被拒绝并提示）：
 
-**③ Flatpak**（软件中心；受沙箱限制，只能改用户级源，系统源为只读展示）
-
-详细的安装/校验/卸载/排查见 [`docs/安装与发布.md`](docs/安装与发布.md)。
-
-## 从源码运行
-
-No installation is required to try it (only PyYAML):
-
-```bash
-git clone <this repo> sourceManager && cd sourceManager
-python3 -m venv .venv && .venv/bin/pip install pyyaml
-.venv/bin/python bin/srcmgr managers           # or: .venv/bin/python -m srcmgr managers
+```sh
+srcmgr                       # 全屏中文菜单界面
+srcmgr --cli managers        # 列出支持的软件生态
 ```
 
-or install the `srcmgr` console script:
+只想快速试一下、不安装，跑检出内的 `bin/srcmgr` 即可：
 
-```bash
-.venv/bin/pip install -e .
-srcmgr managers
+```sh
+.venv/bin/python bin/srcmgr --cli managers
 ```
+
+### ② 一行安装脚本（脚本已就绪；PyPI 发布前先构建 wheel）
+
+`scripts/install.sh` 会装到 `~/.local`、自动创建"源管理器"菜单图标、不动系统 Python、
+不装到 `/usr`，支持 `--uninstall`。等 PyPI 发布后，它就是真正的一行命令：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/walkdong/linuxSourceManager-/main/scripts/install.sh | sh
+```
+
+在那之前，先构建一个 wheel 再交给同一个脚本（以下流程已端到端验证）：
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install build
+.venv/bin/python -m build --wheel                     # 产出 dist/source_manager-<版本>-py3-none-any.whl
+SRCMGR_FROM=wheel SRCMGR_WHEEL=dist/source_manager-0.2.0-py3-none-any.whl sh scripts/install.sh
+```
+
+（wheel 文件名里的版本号以 build 输出为准。）卸载：`sh scripts/install.sh --uninstall`
+（你的配置、备份、历史会**故意保留**）。
+
+### ③ 单文件可执行（不需要 Python；可自己构建）
+
+支持 Ubuntu 22.04+/Debian 12+，首次运行会把自己装到 `~/.local/bin` 并创建菜单图标。
+**Releases 目前是空的**；有 docker/podman 的话可以本地构建（构建在容器里的 Ubuntu 22.04
+中进行，保证在旧系统上也能跑）：
+
+```sh
+scripts/build_binary.sh                    # 容器内构建，产出 dist/srcmgr-linux-x86_64
+chmod +x dist/srcmgr-linux-x86_64 && ./dist/srcmgr-linux-x86_64
+```
+
+### Flatpak
+
+阶段 1 清单已就绪但**尚未上架 Flathub**；受沙箱限制只能改用户级源，系统源为只读展示。
+发布前可按 [`docs/安装与发布.md`](docs/安装与发布.md) "发布者"一节用 flatpak-builder 本地安装。
 
 `srcmgr` needs root **only** for system-wide ecosystems (APT, Docker, system Flatpak,
 Snap); every user-level ecosystem works unprivileged.
@@ -227,7 +250,7 @@ All three roots are overridable: `SRCMGR_CONFIG_HOME`, `SRCMGR_DATA_HOME`,
 
 Alpha.  The engine, the Chinese menu UI, the shell, the CLI, the
 health/backup/history/rollback pipeline, 14 ecosystem manager plugins and 7 source
-providers (144 verified sources) are implemented and tested (**368 tests**).  A GUI is
+providers (144 verified sources) are implemented and tested (**434 tests**).  A GUI is
 planned and already reserved at `srcmgr --gui`; it will consume `srcmgr.core` like the
 other frontends do.  See `PROGRESS.md` for the current milestone and what is next.
 

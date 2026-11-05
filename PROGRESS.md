@@ -358,8 +358,11 @@ per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
   小节、`pyproject.toml` 的 license/classifier、11 个插件 `plugin.yaml` 与
   `docs/source-providers.md` 示例的 `license:` 字段全部同步（注意：`selfhosted/sources/apt.yaml`
   与 docs 里的 "MIT" 是 MIT 大学镜像站，不涉及协议，未改动）；配置 remote
-  `github.com/walkdong/linuxSourceManager-`；重建了因 miniconda 被移除而断链的
+  `github.com/walkdong/linuxSourceManager-` 并推送合并；重建了因 miniconda 被移除而断链的
   `.venv`（改用系统 Python 3.14）。测试 **434**（session 5 之后既有新增，本会话未加测试）。
+  另：安装教学改为与现状一致——README 与 docs/安装与发布.md 如实标注 PyPI/Releases/Flathub
+  均未发布，主入口改为"从源码安装"，附已端到端验证的 wheel 流程（`SRCMGR_FROM=wheel`），
+  修正裸命令示例（`srcmgr managers` → `srcmgr --cli managers`，门禁实测会拒绝裸命令）。
 * **session 5** — M6 发布：安装器（含卸载、无 Python 提示、本地 wheel 模式）、单文件可执行
   （menu/cli 两 flavour，验证了内置 provider 加载、界面渲染、首启自安装、覆盖更新）、
   GitHub Actions（测试矩阵/wheel/容器构建单文件 + 无 Python 冒烟/安装器端到端/tag 发 PyPI 与
