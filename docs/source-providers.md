@@ -70,7 +70,7 @@ type: provider
 version: 0.1.0
 description: Mainland-China public mirrors for apt, npm, pip, cargo, Go, ...
 author: Source Manager contributors
-license: MIT
+license: GPL-3.0
 homepage: https://mirrors.cernet.edu.cn/
 managers: [apt, npm, yarn, pnpm, pip, cargo, go, docker, flatpak, git, maven, rubygems, conda]
 sources_dir: sources

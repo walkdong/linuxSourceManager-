@@ -6,7 +6,7 @@ description: >-
   Docker registry mirrors in /etc/docker/daemon.json (Docker Hub stays the implicit
   upstream whenever no mirror is configured).
 author: Source Manager
-license: MIT
+license: GPL-3.0
 scope: system
 platforms: [linux]
 requires: [docker]

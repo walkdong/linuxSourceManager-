@@ -7,7 +7,7 @@ description: >-
   crates.io, proxy.golang.org, Maven Central, RubyGems, conda-forge, Flathub, Docker
   Hub).  These are the canonical sources the mirrors mirror.
 author: Source Manager contributors
-license: MIT
+license: GPL-3.0
 homepage: https://pypi.org/
 managers: [npm, yarn, pnpm, pip, cargo, go, maven, rubygems, conda, flatpak, docker]
 sources_dir: sources

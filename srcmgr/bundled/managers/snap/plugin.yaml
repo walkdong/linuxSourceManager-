@@ -6,7 +6,7 @@ description: >-
   The snap store / proxy snapd fetches snaps from; snap has no per-source list, so
   this manager exposes the single active store or proxy as one source.
 author: Source Manager
-license: MIT
+license: GPL-3.0
 scope: system
 platforms: [linux]
 requires: [snap]

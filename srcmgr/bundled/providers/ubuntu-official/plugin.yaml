@@ -6,7 +6,7 @@ description: >-
   Stock Ubuntu archives for APT: archive.ubuntu.com, security.ubuntu.com, the
   Canonical China CDN and ports.ubuntu.com for non-x86 architectures.
 author: Source Manager contributors
-license: MIT
+license: GPL-3.0
 homepage: https://archive.ubuntu.com/ubuntu/
 managers: [apt]
 sources_dir: sources

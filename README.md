@@ -115,7 +115,7 @@ srcmgr --cli --json sources --available     # 机器可读
   测速   换到最快   撤销   备份   记录   权限   退出
 ```
 
-设计上刻意克制：**没有一个 emoji**，只有**一个强调色**（默认青，可换琥珀/靛蓝），状态用
+设计上刻意克制：只有**一个强调色**（默认青，可换琥珀/靛蓝），状态用
 **四种低饱和颜色 + 文字**表达，动作是纯文字而不是大色块按钮，默认深色、可切浅色。
 右上角 `语言 中 EN` 点一下就切换界面语言（会记住）。
 
@@ -233,4 +233,5 @@ other frontends do.  See `PROGRESS.md` for the current milestone and what is nex
 
 ## License
 
-MIT.
+GPL-3.0 — 见 [`LICENSE`](LICENSE)。
+

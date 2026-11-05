@@ -6,7 +6,7 @@ description: >-
   Large non-China mirror sites (Europe and North America) for Debian, Ubuntu and
   PyPI, useful as fallbacks and defaults when no China mirror is reachable.
 author: Source Manager contributors
-license: MIT
+license: GPL-3.0
 homepage: https://www.debian.org/mirror/list
 managers: [apt, pip]
 sources_dir: sources

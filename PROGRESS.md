@@ -4,8 +4,8 @@
 > `CLAUDE.md` → `PROGRESS.md` → `git log` → the code named below, then continue from
 > the **NEXT STEP** section. Do not re-plan the project from scratch.
 
-*Last updated: 2026-09-25 (session 5 — M6 发布：一行安装 + 单文件 + CI/Flatpak 就绪, 402 tests green)*
-*Version: 0.1.0 — GUI deliberately not started (CLI + core only).*
+*Last updated: 2026-11-05 (session 6 — 协议 MIT → GPL-3.0 并推送 GitHub, 434 tests green)*
+*Version: 0.2.0 — GUI deliberately not started (CLI + core only).*
 
 ---
 
@@ -16,7 +16,7 @@
 M3 (engine/plugins/registry) and M4 (frontend split) are frozen; M5 is the
 "my grandmother / a primary-school kid can use it" layer.
 
-Status: **402 tests passing**, 14 manager plugins, 7 source providers (**144 registry
+Status: **434 tests passing**, 14 manager plugins, 7 source providers (**144 registry
 entries**), four frontends, three install paths (install.sh / single-file / Flatpak 清单就绪),
 nothing under `/etc` ever written outside the sandboxed test roots (fingerprinted
 before/after).
@@ -353,6 +353,13 @@ per-plugin roots used by the tests (`SRCMGR_APT_ROOT`, `SRCMGR_DOCKER_ROOT`,
 
 ## 5. Session log (newest first)
 
+* **session 6** — 许可协议 MIT → **GPL-3.0** 并首次发布到 GitHub：新增完整 GPL-3.0
+  `LICENSE` 文本（取自系统标准文本，与 GitHub 仓库自动生成的一致）、README 恢复 License
+  小节、`pyproject.toml` 的 license/classifier、11 个插件 `plugin.yaml` 与
+  `docs/source-providers.md` 示例的 `license:` 字段全部同步（注意：`selfhosted/sources/apt.yaml`
+  与 docs 里的 "MIT" 是 MIT 大学镜像站，不涉及协议，未改动）；配置 remote
+  `github.com/walkdong/linuxSourceManager-`；重建了因 miniconda 被移除而断链的
+  `.venv`（改用系统 Python 3.14）。测试 **434**（session 5 之后既有新增，本会话未加测试）。
 * **session 5** — M6 发布：安装器（含卸载、无 Python 提示、本地 wheel 模式）、单文件可执行
   （menu/cli 两 flavour，验证了内置 provider 加载、界面渲染、首启自安装、覆盖更新）、
   GitHub Actions（测试矩阵/wheel/容器构建单文件 + 无 Python 冒烟/安装器端到端/tag 发 PyPI 与

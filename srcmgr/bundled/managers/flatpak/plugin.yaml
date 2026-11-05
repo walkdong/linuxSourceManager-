@@ -6,7 +6,7 @@ description: >-
   Flatpak remotes of both the system and the user installation, read and modified
   through the flatpak CLI.
 author: Source Manager
-license: MIT
+license: GPL-3.0
 scope: system
 platforms: [linux]
 requires: [flatpak]

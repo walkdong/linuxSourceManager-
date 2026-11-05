@@ -7,7 +7,7 @@ description: >-
   Berkeley, Princeton, MIT, MTU, AARNet).  Useful as geographically diverse fallbacks
   for Debian and Ubuntu when a vendor mirror is rate-limited or blocked.
 author: Source Manager contributors
-license: MIT
+license: GPL-3.0
 homepage: https://www.debian.org/mirror/list
 managers: [apt]
 sources_dir: sources
